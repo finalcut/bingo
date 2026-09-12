@@ -37,8 +37,8 @@ export function createCard(random: RandomSource = Math.random): BingoCard {
     return shuffle(range(start, start + 14), random)
   })
 
-  for (let row = 0; row < 5; row += 1) {
-    for (let column = 0; column < 5; column += 1) {
+  for (let row = 0; row < columns.length; row += 1) {
+    for (let column = 0; column < columns.length; column += 1) {
       if (row === 2 && column === 2) {
         cells.push({ value: null, marked: true, free: true })
         continue
@@ -57,7 +57,7 @@ export function createDrawBag(random: RandomSource = Math.random): number[] {
 }
 
 export function markCell(card: BingoCard, row: number, column: number): BingoCard {
-  if (row < 0 || row > 4 || column < 0 || column > 4) {
+  if (row < 0 || row >= columns.length || column < 0 || column >= columns.length) {
     throw new Error('Cell coordinates must be between 0 and 4')
   }
 
