@@ -61,7 +61,7 @@ const httpServer = createServer(async (request, response) => {
   try {
     const body = await readFile(filePath)
     const extension = extname(filePath)
-    const contentType = extension === '.js' ? 'text/javascript' : extension === '.css' ? 'text/css' : 'text/html'
+    const contentType = extension === '.js' ? 'text/javascript' : extension === '.css' ? 'text/css' : extension === '.svg' ? 'image/svg+xml' : 'text/html'
     response.writeHead(200, { 'content-type': contentType })
     response.end(body)
   } catch {
