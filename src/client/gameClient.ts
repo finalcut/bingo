@@ -1,5 +1,15 @@
 import type { ClientCommand, ServerEvent } from '../shared/protocol'
 
+export type WebSocketLocation = Pick<Location, 'protocol' | 'host' | 'hostname' | 'port'>
+
+export function getWebSocketUrl(location: WebSocketLocation, configuredUrl?: string): string {
+  if (configuredUrl) return configuredUrl
+  if (location.protocol === 'http:' && ['localhost', '127.0.0.1', '::1'].includes(location.hostname) && location.port !== '3001') {
+    return 'ws://localhost:3001'
+  }
+  return `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}`
+}
+
 export class GameClient {
   private socket: WebSocket | undefined
   private readonly onEvent: (event: ServerEvent) => void
@@ -10,7 +20,7 @@ export class GameClient {
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const url = import.meta.env.VITE_WS_URL ?? 'ws://localhost:3001'
+      const url = getWebSocketUrl(window.location, import.meta.env.VITE_WS_URL)
       this.socket = new WebSocket(url)
       this.socket.onopen = () => resolve()
       this.socket.onerror = () => reject(new Error('Unable to connect to the bingo server'))

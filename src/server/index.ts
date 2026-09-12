@@ -100,6 +100,7 @@ webSocketServer.on('connection', (socket) => {
         case 'startGame': found.room.start(connection.playerId); break
         case 'drawBall': found.room.draw(connection.playerId); break
         case 'markCell': found.room.mark(connection.playerId, command.row, command.column); break
+        case 'newGame': found.room.newGame(connection.playerId, command.modeId); break
         case 'claimBingo': {
           const claim = found.room.claimBingo(connection.playerId)
           if (!claim.accepted) send(socket, { type: 'error', message: claim.message })

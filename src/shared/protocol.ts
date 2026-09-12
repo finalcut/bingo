@@ -9,6 +9,7 @@ export type ClientCommand =
   | { type: 'drawBall' }
   | { type: 'markCell'; row: number; column: number }
   | { type: 'claimBingo' }
+  | { type: 'newGame'; modeId: Bingo75ModeId }
 
 export type RoomStateEvent = {
   type: 'roomState'

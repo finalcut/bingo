@@ -36,6 +36,7 @@ function ModePreview({ mode }: { mode: RoomStateEvent['mode'] }) {
 
 export function Room({ state, client, error }: { state: RoomStateEvent; client: GameClient; error: string }) {
   const [qr, setQr] = useState('')
+  const [newGameMode, setNewGameMode] = useState<Bingo75ModeId>(state.mode.id)
   const joinUrl = `${window.location.origin}/?room=${state.roomCode}`
   useEffect(() => { void QRCode.toDataURL(joinUrl, { width: 220, margin: 1 }).then(setQr) }, [joinUrl])
   const lastBall = state.calledBalls.at(-1)
@@ -58,6 +59,7 @@ export function Room({ state, client, error }: { state: RoomStateEvent; client: 
         <div className="eyebrow">Host controls</div>
         {state.phase === 'lobby' && <button className="primary-button" onClick={() => client.send({ type: 'startGame' })}>Start game</button>}
         {state.phase === 'playing' && <button className="primary-button" onClick={() => client.send({ type: 'drawBall' })}>Draw next ball</button>}
+        {state.phase === 'finished' && <><label>New game mode<select aria-label="New game mode" value={newGameMode} onChange={(event) => setNewGameMode(event.target.value as Bingo75ModeId)}>{Object.values(bingo75Modes).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select></label><button className="primary-button" onClick={() => client.send({ type: 'newGame', modeId: newGameMode })}>Start new game</button></>}
         <div className="players"><span>Players</span><strong>{state.players.length}</strong>{state.players.map((player) => <div key={player.playerId}>{player.name}{player.eliminated ? ' (out)' : ''}</div>)}</div>
         {qr && <img className="qr-code" src={qr} alt={`Join room ${state.roomCode}`} />}
       </div>}

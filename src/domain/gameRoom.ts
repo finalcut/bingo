@@ -26,7 +26,7 @@ export class GameRoom {
   private readonly called = new Set<number>()
   private currentPhase: RoomPhase = 'lobby'
   private winningPlayerId: string | undefined
-  private readonly selectedMode: Bingo75Mode
+  private selectedMode: Bingo75Mode
 
   private constructor(host: RoomPlayer, mode: Bingo75Mode) {
     this.hostId = host.playerId
@@ -115,6 +115,21 @@ export class GameRoom {
     this.currentPhase = 'finished'
     this.winningPlayerId = playerId
     return { accepted: true, playerId }
+  }
+
+  newGame(actorId: string, modeId: Bingo75ModeId): void {
+    this.requireHost(actorId)
+    if (this.currentPhase !== 'finished') throw new Error('Game is not finished')
+
+    this.selectedMode = getBingo75Mode(modeId)
+    this.drawBag = createDrawBag()
+    this.called.clear()
+    this.winningPlayerId = undefined
+    this.currentPhase = 'playing'
+    for (const player of this.playerMap.values()) {
+      player.card = createCard()
+      player.eliminated = false
+    }
   }
 
   private requireHost(actorId: string): void {

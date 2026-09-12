@@ -61,4 +61,26 @@ describe('GameRoom', () => {
     expect(room.mode.id).toBe('four-corners')
     expect(room.claimBingo(player.playerId)).toEqual({ accepted: true, playerId: player.playerId })
   })
+
+  it('starts another game in the same room with a new mode and players', () => {
+    const room = GameRoom.create('Host', 'four-corners')
+    const player = room.join('Player')
+    const playerIds = room.players.map((candidate) => candidate.playerId)
+    const tokens = room.players.map((candidate) => candidate.token)
+    room.start(room.hostId)
+    for (let index = 0; index < 75; index += 1) room.draw(room.hostId)
+    for (const [row, column] of [[0, 0], [0, 4], [4, 0], [4, 4]] as const) room.mark(player.playerId, row, column)
+    room.claimBingo(player.playerId)
+
+    room.newGame(room.hostId, 'blackout')
+
+    expect(room.phase).toBe('playing')
+    expect(room.mode.id).toBe('blackout')
+    expect(room.calledBalls).toEqual([])
+    expect(room.winnerId).toBeUndefined()
+    expect(room.players.map((candidate) => candidate.playerId)).toEqual(playerIds)
+    expect(room.players.map((candidate) => candidate.token)).toEqual(tokens)
+    expect(room.players.every((candidate) => !candidate.eliminated)).toBe(true)
+    expect(room.players.every((candidate) => candidate.card.cells.filter((cell) => !cell.free).every((cell) => !cell.marked))).toBe(true)
+  })
 })

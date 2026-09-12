@@ -66,4 +66,40 @@ describe('Bingo app entry', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Alex won the game')
   })
+
+  it('lets the host choose a mode when starting a new game', () => {
+    const card: BingoCard = {
+      columns: ['B', 'I', 'N', 'G', 'O'],
+      cells: Array.from({ length: 25 }, (_, index) => ({ value: index + 1, marked: false, free: false })),
+    }
+    const send = vi.fn()
+    const state: RoomStateEvent = {
+      type: 'roomState',
+      roomCode: 'ABC123',
+      phase: 'finished',
+      playerId: 'player-1',
+      token: 'token-1',
+      isHost: true,
+      eliminated: false,
+      card,
+      players: [{ playerId: 'player-1', name: 'Alex', eliminated: false }],
+      calledBalls: [1, 2, 3],
+      mode: {
+        id: 'plus',
+        name: 'Plus',
+        description: 'Complete the center row and center column.',
+        patterns: [[[0, 2], [1, 2], [2, 0], [2, 1], [2, 2], [2, 3], [2, 4], [3, 2], [4, 2]]],
+      },
+      winnerId: 'player-1',
+    }
+
+    render(<Room state={state} client={{ send } as unknown as GameClient} error="" />)
+
+    const modeSelect = screen.getByLabelText(/new game mode/i)
+    expect(modeSelect).toHaveValue('plus')
+    fireEvent.change(modeSelect, { target: { value: 'blackout' } })
+    fireEvent.click(screen.getByRole('button', { name: /start new game/i }))
+
+    expect(send).toHaveBeenCalledWith({ type: 'newGame', modeId: 'blackout' })
+  })
 })
