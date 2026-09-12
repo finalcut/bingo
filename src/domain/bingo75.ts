@@ -1,3 +1,5 @@
+import { getBingo75Mode, type Bingo75Mode } from './bingo75Modes'
+
 export type RandomSource = () => number
 
 export type BingoCell = {
@@ -69,32 +71,19 @@ export function markCell(card: BingoCard, row: number, column: number): BingoCar
   }
 }
 
-export function isWinningCard(card: BingoCard, called: Set<number>): boolean {
+export function isWinningCard(card: BingoCard, called: Set<number>, mode: Bingo75Mode = getBingo75Mode('standard')): boolean {
   const marked = (row: number, column: number): boolean => {
     const cell = card.cells[row * 5 + column]
     return Boolean(cell?.free || (cell?.value !== null && called.has(cell.value)))
   }
 
-  const lines = [
-    ...Array.from({ length: 5 }, (_, row) => Array.from({ length: 5 }, (_, column) => [row, column] as const)),
-    ...Array.from({ length: 5 }, (_, column) => Array.from({ length: 5 }, (_, row) => [row, column] as const)),
-    Array.from({ length: 5 }, (_, index) => [index, index] as const),
-    Array.from({ length: 5 }, (_, index) => [index, 4 - index] as const),
-  ]
-
-  return lines.some((line) => line.every(([row, column]) => marked(row, column)))
+  return mode.patterns.some((pattern) => pattern.every(([row, column]) => marked(row, column)))
 }
 
-export function isWinningSelection(card: BingoCard, called: Set<number>): boolean {
+export function isWinningSelection(card: BingoCard, called: Set<number>, mode: Bingo75Mode = getBingo75Mode('standard')): boolean {
   const selected = (row: number, column: number): boolean => {
     const cell = card.cells[row * 5 + column]
     return Boolean(cell?.free || (cell?.marked && cell.value !== null && called.has(cell.value)))
   }
-  const lines = [
-    ...Array.from({ length: 5 }, (_, row) => Array.from({ length: 5 }, (_, column) => [row, column] as const)),
-    ...Array.from({ length: 5 }, (_, column) => Array.from({ length: 5 }, (_, row) => [row, column] as const)),
-    Array.from({ length: 5 }, (_, index) => [index, index] as const),
-    Array.from({ length: 5 }, (_, index) => [index, 4 - index] as const),
-  ]
-  return lines.some((line) => line.every(([row, column]) => selected(row, column)))
+  return mode.patterns.some((pattern) => pattern.every(([row, column]) => selected(row, column)))
 }

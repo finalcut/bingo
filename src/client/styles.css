@@ -15,16 +15,24 @@ p { color: #d7d9ca; font: 1.05rem/1.5 ui-sans-serif, system-ui, sans-serif; }
 .primary-button:focus-visible, .secondary-button:focus-visible, .claim-button:focus-visible, .back-button:focus-visible, input:focus-visible, .card-cell:focus-visible { outline: 3px solid #e7c98f; outline-offset: 3px; }
 .join-screen form { display: grid; gap: 1.2rem; max-width: 360px; margin-top: 3rem; }
 label { display: grid; gap: .45rem; color: #d7d9ca; font: .78rem ui-sans-serif, system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
-input { padding: .8rem; color: #f7f1e5; background: #214b46; border: 1px solid #82a99a; }
+input, select { padding: .8rem; color: #f7f1e5; background: #214b46; border: 1px solid #82a99a; }
+select { color-scheme: dark; }
 .back-button { margin-top: 1rem; padding-left: 0; background: none; color: #d7d9ca; }
-.error { color: #e39a83; }
+.error { display: inline-block; padding: .65rem .8rem; color: #8f3f36; background: #f7f1e5; }
 .room-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 2rem; max-width: 1120px; margin: 0 auto; padding: 6vh 4vw; }
 .game-panel, .side-panel { padding: 1.5rem; border: 1px solid #376f65; background: rgba(23, 59, 56, .78); }
 .game-panel h1 { font-size: clamp(2.5rem, 6vw, 5rem); }
 .status-row { color: #d7d9ca; font: .85rem ui-sans-serif, system-ui, sans-serif; }
 .status-dot { display: inline-block; width: .55rem; height: .55rem; margin-right: .5rem; background: #e7c98f; border-radius: 50%; }
-.status-dot.complete { background: #e39a83; }
+.status-dot.complete { background: #f7f1e5; }
 .winner-banner { margin: 1.5rem 0 0; padding: 1rem; color: #173b38; background: #e7c98f; font-weight: 700; }
+.mode-info { margin: 1.5rem 0; padding: 1rem 0; border-top: 1px solid rgb(231 201 143 / 35%); border-bottom: 1px solid rgb(231 201 143 / 35%); }
+.mode-info h2 { margin: .2rem 0; }
+.mode-info p { margin: 0 0 1rem; color: #c8d5c7; }
+.mode-guide { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; width: min(190px, 100%); aspect-ratio: 1; }
+.guide-cell { display: grid; place-items: center; min-width: 0; color: #173b38; background: #e8eee3; font-size: .48rem; font-weight: 700; }
+.guide-cell-active { background: #e7c98f; }
+.guide-cell-free { font-size: .4rem; }
 .ball-call { display: flex; align-items: baseline; gap: 1rem; margin: 2rem 0 1rem; color: #d7d9ca; font: .8rem ui-sans-serif, system-ui, sans-serif; text-transform: uppercase; }
 .ball-call strong { color: #e7c98f; font: 3rem Georgia, serif; }
 .bingo-card { display: grid; grid-template-columns: repeat(5, 1fr); gap: .35rem; max-width: 620px; margin: 1.5rem 0; }

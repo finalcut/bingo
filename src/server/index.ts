@@ -33,6 +33,7 @@ function stateFor(socket: WebSocket): RoomStateEvent | undefined {
     card: player.card,
     players: registered.room.players.map(({ playerId, name, eliminated }) => ({ playerId, name, eliminated })),
     calledBalls: registered.room.calledBalls,
+    mode: registered.room.mode,
     winnerId: registered.room.winnerId,
   }
 }
@@ -74,7 +75,7 @@ webSocketServer.on('connection', (socket) => {
     try {
       const command = JSON.parse(raw.toString()) as ClientCommand
       if (command.type === 'createRoom') {
-        const created = registry.create(command.name)
+        const created = registry.create(command.name, command.modeId)
         const host = created.room.players[0]
         connections.set(socket, { code: created.code, playerId: host.playerId, token: host.token })
         broadcast(created.code)

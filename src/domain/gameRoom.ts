@@ -1,4 +1,5 @@
 import { createCard, createDrawBag, isWinningSelection, markCell, type BingoCard } from './bingo75'
+import { getBingo75Mode, type Bingo75Mode, type Bingo75ModeId } from './bingo75Modes'
 
 export type RoomPhase = 'lobby' | 'playing' | 'finished'
 
@@ -25,21 +26,23 @@ export class GameRoom {
   private readonly called = new Set<number>()
   private currentPhase: RoomPhase = 'lobby'
   private winningPlayerId: string | undefined
+  private readonly selectedMode: Bingo75Mode
 
-  private constructor(host: RoomPlayer) {
+  private constructor(host: RoomPlayer, mode: Bingo75Mode) {
     this.hostId = host.playerId
+    this.selectedMode = mode
     this.playerMap.set(host.playerId, host)
     this.drawBag = createDrawBag()
   }
 
-  static create(hostName: string): GameRoom {
+  static create(hostName: string, modeId: Bingo75ModeId = 'standard'): GameRoom {
     return new GameRoom({
       playerId: id('player'),
       name: hostName.trim(),
       token: id('token'),
       card: createCard(),
       eliminated: false,
-    })
+    }, getBingo75Mode(modeId))
   }
 
   get phase(): RoomPhase {
@@ -56,6 +59,10 @@ export class GameRoom {
 
   get winnerId(): string | undefined {
     return this.winningPlayerId
+  }
+
+  get mode(): Bingo75Mode {
+    return this.selectedMode
   }
 
   join(name: string, token?: string): RoomPlayer {
@@ -101,7 +108,7 @@ export class GameRoom {
     if (this.currentPhase !== 'playing') return { accepted: false, eliminated: true, message: 'Game is not in progress.' }
     const player = this.requirePlayer(playerId)
     this.requireActive(player)
-    if (!isWinningSelection(player.card, this.called)) {
+    if (!isWinningSelection(player.card, this.called, this.selectedMode)) {
       player.eliminated = true
       return { accepted: false, eliminated: true, message: 'Bingo claim rejected. You are out of the game.' }
     }

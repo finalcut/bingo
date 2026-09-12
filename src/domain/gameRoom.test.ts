@@ -49,4 +49,16 @@ describe('GameRoom', () => {
     expect(room.players.find((candidate) => candidate.playerId === player.playerId)?.eliminated).toBe(true)
     expect(() => room.mark(player.playerId, 0, 0)).toThrow('Player is out of the game')
   })
+
+  it('validates claims against the room mode', () => {
+    const room = GameRoom.create('Host', 'four-corners')
+    const player = room.join('Player')
+    room.start(room.hostId)
+
+    for (let index = 0; index < 75; index += 1) room.draw(room.hostId)
+    for (const [row, column] of [[0, 0], [0, 4], [4, 0], [4, 4]] as const) room.mark(player.playerId, row, column)
+
+    expect(room.mode.id).toBe('four-corners')
+    expect(room.claimBingo(player.playerId)).toEqual({ accepted: true, playerId: player.playerId })
+  })
 })

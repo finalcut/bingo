@@ -1,15 +1,16 @@
 import { GameRoom } from '../domain/gameRoom'
+import type { Bingo75ModeId } from '../domain/bingo75Modes'
 
 export type RoomConnection = { code: string; room: GameRoom }
 
 export class RoomRegistry {
   private readonly rooms = new Map<string, GameRoom>()
 
-  create(hostName: string): RoomConnection {
+  create(hostName: string, modeId: Bingo75ModeId = 'standard'): RoomConnection {
     let code = ''
     do code = Math.random().toString(36).slice(2, 8).toUpperCase()
     while (this.rooms.has(code))
-    const room = GameRoom.create(hostName)
+    const room = GameRoom.create(hostName, modeId)
     this.rooms.set(code, room)
     return { code, room }
   }
