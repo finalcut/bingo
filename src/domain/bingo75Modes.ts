@@ -28,6 +28,7 @@ const allCells = (): BingoCoordinate[] => Array.from({ length: 25 }, (_, index) 
 const checkerboard = (): BingoCoordinate[] => allCells().filter(([rowIndex, columnIndex]) => (rowIndex + columnIndex) % 2 === 0)
 const ticTacToe = (): BingoCoordinate[] => [0, 2, 4].flatMap((rowIndex) => [0, 2, 4].map((columnIndex) => [rowIndex, columnIndex] as BingoCoordinate))
 
+// game modes defined at: https://www.compliance.lottery.nh.gov/sites/g/files/ehbemt686/files/inline-documents/approved-bingo-game-patterns.pdf
 export const bingo75Modes: Record<Bingo75ModeId, Bingo75Mode> = {
   standard: {
     id: 'standard',
