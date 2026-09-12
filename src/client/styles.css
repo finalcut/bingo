@@ -1,0 +1,44 @@
+:root { color: #f7f1e5; background: #173b38; font-family: Georgia, 'Times New Roman', serif; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; background: radial-gradient(circle at 80% 0%, #376f65 0, #173b38 42rem); }
+button, input { font: inherit; }
+button { cursor: pointer; }
+.landing, .join-screen { min-height: 100vh; max-width: 760px; margin: 0 auto; padding: 13vh 7vw; }
+.eyebrow { color: #e7c98f; font: 700 0.75rem/1.2 ui-sans-serif, system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+h1 { font-size: clamp(3.2rem, 9vw, 7.5rem); line-height: .9; font-weight: 400; margin: 1.2rem 0; }
+em { color: #e7c98f; font-style: normal; }
+p { color: #d7d9ca; font: 1.05rem/1.5 ui-sans-serif, system-ui, sans-serif; }
+.mode-actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 3rem; }
+.primary-button, .secondary-button, .claim-button, .back-button { border: 0; padding: .9rem 1.2rem; font: 700 .78rem ui-sans-serif, system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+.primary-button { background: #e7c98f; color: #173b38; }
+.secondary-button, .claim-button { background: transparent; color: #f7f1e5; border: 1px solid #82a99a; }
+.primary-button:focus-visible, .secondary-button:focus-visible, .claim-button:focus-visible, .back-button:focus-visible, input:focus-visible, .card-cell:focus-visible { outline: 3px solid #e7c98f; outline-offset: 3px; }
+.join-screen form { display: grid; gap: 1.2rem; max-width: 360px; margin-top: 3rem; }
+label { display: grid; gap: .45rem; color: #d7d9ca; font: .78rem ui-sans-serif, system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+input { padding: .8rem; color: #f7f1e5; background: #214b46; border: 1px solid #82a99a; }
+.back-button { margin-top: 1rem; padding-left: 0; background: none; color: #d7d9ca; }
+.error { color: #e39a83; }
+.room-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 2rem; max-width: 1120px; margin: 0 auto; padding: 6vh 4vw; }
+.game-panel, .side-panel { padding: 1.5rem; border: 1px solid #376f65; background: rgba(23, 59, 56, .78); }
+.game-panel h1 { font-size: clamp(2.5rem, 6vw, 5rem); }
+.status-row { color: #d7d9ca; font: .85rem ui-sans-serif, system-ui, sans-serif; }
+.status-dot { display: inline-block; width: .55rem; height: .55rem; margin-right: .5rem; background: #e7c98f; border-radius: 50%; }
+.status-dot.complete { background: #e39a83; }
+.winner-banner { margin: 1.5rem 0 0; padding: 1rem; color: #173b38; background: #e7c98f; font-weight: 700; }
+.ball-call { display: flex; align-items: baseline; gap: 1rem; margin: 2rem 0 1rem; color: #d7d9ca; font: .8rem ui-sans-serif, system-ui, sans-serif; text-transform: uppercase; }
+.ball-call strong { color: #e7c98f; font: 3rem Georgia, serif; }
+.bingo-card { display: grid; grid-template-columns: repeat(5, 1fr); gap: .35rem; max-width: 620px; margin: 1.5rem 0; }
+.card-heading { padding: .6rem; color: #e7c98f; text-align: center; font: 700 1.1rem ui-sans-serif, system-ui, sans-serif; }
+.card-cell { aspect-ratio: 1; border: 1px solid #82a99a; color: #f7f1e5; background: #214b46; font-size: clamp(1rem, 3vw, 1.6rem); }
+.card-cell.marked { color: #173b38; background: #e7c98f; border-color: #f7f1e5; }
+.card-cell:disabled { cursor: default; }
+.claim-button { margin-top: .5rem; }
+.side-panel { display: grid; align-content: start; gap: 2rem; }
+.host-controls { display: grid; gap: 1rem; }
+.players { display: grid; gap: .4rem; color: #d7d9ca; font: .85rem ui-sans-serif, system-ui, sans-serif; }
+.players strong { color: #e7c98f; font-size: 2rem; }
+.qr-code { width: 180px; background: white; padding: .5rem; }
+.called-panel { border-top: 1px solid #376f65; padding-top: 1.5rem; }
+.called-balls { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: 1rem; }
+.called-balls span { display: grid; place-items: center; width: 2rem; height: 2rem; color: #173b38; background: #d7d9ca; font: .72rem ui-sans-serif, system-ui, sans-serif; }
+@media (max-width: 760px) { .room-layout { grid-template-columns: 1fr; padding: 2rem 1rem; } .side-panel { grid-row: 1; } .game-panel { grid-row: 2; } }
