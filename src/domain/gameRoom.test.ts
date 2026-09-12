@@ -24,8 +24,16 @@ describe('GameRoom', () => {
     expect(room.draw(room.hostId)).toBeGreaterThanOrEqual(1)
   })
 
+  it('does not start until a second player joins', () => {
+    const room = GameRoom.create('Host')
+
+    expect(() => room.start(room.hostId)).toThrow('At least two players are required')
+    expect(room.phase).toBe('lobby')
+  })
+
   it('lets a player join an active game with the called-ball history', () => {
     const room = GameRoom.create('Host')
+    room.join('Player')
     room.start(room.hostId)
     const calledBalls = [room.draw(room.hostId), room.draw(room.hostId), room.draw(room.hostId)]
 
@@ -51,6 +59,7 @@ describe('GameRoom', () => {
   it('eliminates a player after an invalid Bingo claim', () => {
     const room = GameRoom.create('Host')
     const player = room.join('Player')
+    room.join('Another player')
     room.start(room.hostId)
 
     expect(() => room.mark(player.playerId, 0, 0)).not.toThrow()
@@ -61,6 +70,17 @@ describe('GameRoom', () => {
     })
     expect(room.players.find((candidate) => candidate.playerId === player.playerId)?.eliminated).toBe(true)
     expect(() => room.mark(player.playerId, 0, 0)).toThrow('Player is out of the game')
+  })
+
+  it('declares the last active player the winner after an invalid claim', () => {
+    const room = GameRoom.create('Host')
+    const player = room.join('Player')
+    room.start(room.hostId)
+
+    room.claimBingo(player.playerId)
+
+    expect(room.phase).toBe('finished')
+    expect(room.winnerId).toBe(room.hostId)
   })
 
   it('lets a player unmark a cell by marking it again', () => {

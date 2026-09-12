@@ -107,6 +107,7 @@ describe('Bingo app entry', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Friday Night Bingo')
     expect(screen.queryByText('Your game room')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getByText('ABC123', { selector: '.room-code' })).toBeInTheDocument())
+    expect(screen.getByText('ABC123', { selector: '.room-code' })).toHaveClass('room-code-distinct')
 
     const modeSelect = screen.getByLabelText(/new game mode/i)
     expect(modeSelect).toHaveValue('plus')
@@ -121,6 +122,40 @@ describe('Bingo app entry', () => {
     expect(screen.getByText('ABC123', { selector: '.room-code' })).toBeInTheDocument()
     expect(screen.queryByText('Host controls')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('img', { name: 'Join room ABC123' })).toBeInTheDocument())
+  })
+
+  it('places the draw control in the game panel for the host', () => {
+    const card: BingoCard = {
+      columns: ['B', 'I', 'N', 'G', 'O'],
+      cells: Array.from({ length: 25 }, (_, index) => ({ value: index + 1, marked: false, free: false })),
+    }
+    const send = vi.fn()
+    const state: RoomStateEvent = {
+      type: 'roomState',
+      roomCode: 'ABC123',
+      roomName: 'Friday Night Bingo',
+      phase: 'playing',
+      playerId: 'player-1',
+      token: 'token-1',
+      isHost: true,
+      eliminated: false,
+      card,
+      players: [{ playerId: 'player-1', name: 'Alex', eliminated: false }],
+      calledBalls: [1, 2, 3],
+      mode: {
+        id: 'plus',
+        name: 'Plus',
+        description: 'Complete the center row and center column.',
+        patterns: [[[0, 2], [1, 2], [2, 0], [2, 1], [2, 2], [2, 3], [2, 4], [3, 2], [4, 2]]],
+      },
+    }
+
+    render(<Room state={state} client={{ send } as unknown as GameClient} error="" />)
+
+    const drawButton = screen.getByRole('button', { name: /draw next ball/i })
+    expect(drawButton.closest('.game-panel')).toBeInTheDocument()
+    fireEvent.click(drawButton)
+    expect(send).toHaveBeenCalledWith({ type: 'drawBall' })
   })
 
 })

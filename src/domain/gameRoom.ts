@@ -86,6 +86,7 @@ export class GameRoom {
   start(actorId: string): void {
     this.requireHost(actorId)
     if (this.currentPhase !== 'lobby') throw new Error('Game has already started')
+    if (this.players.length < 2) throw new Error('At least two players are required to start')
     this.currentPhase = 'playing'
   }
 
@@ -112,6 +113,11 @@ export class GameRoom {
     this.requireActive(player)
     if (!isWinningSelection(player.card, this.called, this.selectedMode)) {
       player.eliminated = true
+      const remainingPlayers = this.players.filter((candidate) => !candidate.eliminated)
+      if (remainingPlayers.length === 1) {
+        this.currentPhase = 'finished'
+        this.winningPlayerId = remainingPlayers[0].playerId
+      }
       return { accepted: false, eliminated: true, message: 'Bingo claim rejected. You are out of the game.' }
     }
     this.currentPhase = 'finished'
