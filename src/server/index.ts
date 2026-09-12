@@ -25,6 +25,7 @@ function stateFor(socket: WebSocket): RoomStateEvent | undefined {
   return {
     type: 'roomState',
     roomCode: connection.code,
+    roomName: registered.room.roomName,
     phase: registered.room.phase,
     playerId: player.playerId,
     token: player.token,
@@ -75,7 +76,7 @@ webSocketServer.on('connection', (socket) => {
     try {
       const command = JSON.parse(raw.toString()) as ClientCommand
       if (command.type === 'createRoom') {
-        const created = registry.create(command.name, command.modeId)
+        const created = registry.create(command.name, command.roomName, command.modeId)
         const host = created.room.players[0]
         connections.set(socket, { code: created.code, playerId: host.playerId, token: host.token })
         broadcast(created.code)

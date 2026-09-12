@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BingoCard } from '../domain/bingo75'
 import type { RoomStateEvent } from '../shared/protocol'
@@ -13,14 +13,18 @@ describe('Bingo app entry', () => {
 
     expect(screen.getByRole('button', { name: /host a game/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /join a game/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /host a game/i }).parentElement).toHaveClass('mode-actions')
   })
 
   it('offers game mode selection when hosting', async () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: /host a game/i }))
 
+    expect(screen.getByLabelText(/players name/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/room name/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/game mode/i)).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Blackout' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/players name/i).closest('form')).toHaveClass('join-form')
   })
 
   it('does not highlight a called number until the player marks it', () => {
@@ -42,6 +46,7 @@ describe('Bingo app entry', () => {
     const state: RoomStateEvent = {
       type: 'roomState',
       roomCode: 'ABC123',
+      roomName: 'Friday Night Bingo',
       phase: 'finished',
       playerId: 'player-2',
       token: 'token-2',
@@ -52,7 +57,7 @@ describe('Bingo app entry', () => {
         { playerId: 'player-1', name: 'Alex', eliminated: false },
         { playerId: 'player-2', name: 'Sam', eliminated: false },
       ],
-      calledBalls: [1, 2, 3],
+      calledBalls: [30, 2, 45, 1, 16],
       mode: {
         id: 'plus',
         name: 'Plus',
@@ -65,9 +70,12 @@ describe('Bingo app entry', () => {
     render(<Room state={state} client={{ send: vi.fn() } as unknown as GameClient} error="" />)
 
     expect(screen.getByRole('status')).toHaveTextContent('Alex won the game')
+    expect(within(screen.getByLabelText('B column')).getAllByText(/^\d+$/).map((ball) => ball.textContent)).toEqual(['1', '2'])
+    expect(within(screen.getByLabelText('I column')).getAllByText(/^\d+$/).map((ball) => ball.textContent)).toEqual(['16', '30'])
+    expect(within(screen.getByLabelText('N column')).getAllByText(/^\d+$/).map((ball) => ball.textContent)).toEqual(['45'])
   })
 
-  it('lets the host choose a mode when starting a new game', () => {
+  it('shows the room name and code for the host', async () => {
     const card: BingoCard = {
       columns: ['B', 'I', 'N', 'G', 'O'],
       cells: Array.from({ length: 25 }, (_, index) => ({ value: index + 1, marked: false, free: false })),
@@ -76,6 +84,7 @@ describe('Bingo app entry', () => {
     const state: RoomStateEvent = {
       type: 'roomState',
       roomCode: 'ABC123',
+      roomName: 'Friday Night Bingo',
       phase: 'finished',
       playerId: 'player-1',
       token: 'token-1',
@@ -93,7 +102,11 @@ describe('Bingo app entry', () => {
       winnerId: 'player-1',
     }
 
-    render(<Room state={state} client={{ send } as unknown as GameClient} error="" />)
+    const { rerender } = render(<Room state={state} client={{ send } as unknown as GameClient} error="" />)
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Friday Night Bingo')
+    expect(screen.queryByText('Your game room')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('ABC123', { selector: '.room-code' })).toBeInTheDocument())
 
     const modeSelect = screen.getByLabelText(/new game mode/i)
     expect(modeSelect).toHaveValue('plus')
@@ -101,5 +114,13 @@ describe('Bingo app entry', () => {
     fireEvent.click(screen.getByRole('button', { name: /start new game/i }))
 
     expect(send).toHaveBeenCalledWith({ type: 'newGame', modeId: 'blackout' })
+
+    rerender(<Room state={{ ...state, isHost: false, playerId: 'player-2' }} client={{ send } as unknown as GameClient} error="" />)
+
+    expect(screen.getByText('Players')).toBeInTheDocument()
+    expect(screen.getByText('ABC123', { selector: '.room-code' })).toBeInTheDocument()
+    expect(screen.queryByText('Host controls')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('img', { name: 'Join room ABC123' })).toBeInTheDocument())
   })
+
 })

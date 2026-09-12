@@ -67,7 +67,7 @@ export function markCell(card: BingoCard, row: number, column: number): BingoCar
 
   return {
     ...card,
-    cells: card.cells.map((current, currentIndex) => currentIndex === index ? { ...current, marked: true } : current),
+    cells: card.cells.map((current, currentIndex) => currentIndex === index ? { ...current, marked: !current.marked } : current),
   }
 }
 

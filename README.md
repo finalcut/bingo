@@ -1,6 +1,34 @@
 # Bingo
 
-A client/server US 75-ball bingo game. The host creates a room and shares its QR code; players join with a display name and receive a server-generated 5x5 card.
+A real-time US 75-ball bingo game for hosting a shared game with friends. The host creates a room and shares its QR code; players join with a display name and receive a server-generated 5x5 card.
+
+## Features
+
+- Create a game room and share its QR code with players
+- Join with a display name from any connected browser
+- Generate a unique 5x5 bingo card for each player
+- Run a shared game over WebSockets with server-controlled room state
+- Support standard bingo play with configurable game modes
+- Keep active rooms in memory for lightweight, fast-paced sessions
+
+### Game modes
+
+The host chooses a mode when creating a room and can choose a new mode between games:
+
+| Mode | Winning pattern |
+| --- | --- |
+| Standard | Complete any row, column, or diagonal. |
+| 7 | Complete the top-left corner shape and center column. |
+| Plus | Complete the center row and center column. |
+| Blackout | Mark every space on the card. |
+| Checkerboard | Mark the alternating checkerboard spaces. |
+| Four Corners | Mark all four corner spaces. |
+| Letter H | Complete both outside columns and the center row. |
+| Letter T | Complete the top row and center column. |
+| Letter X | Complete both diagonals. |
+| Letter Z | Complete the top row, bottom row, and reverse diagonal. |
+| Large Picture Frame | Complete the outside edge of the card. |
+| Tic Tac Toe | Complete the nine spaces at the intersections of a 3x3 grid. |
 
 ## Development
 
@@ -19,7 +47,7 @@ npm run server
 
 The Vite client runs on `http://localhost:5173`; the WebSocket server runs on `http://localhost:3001`. Set `VITE_WS_URL` when the server is hosted at another origin.
 
-## Production
+## Server
 
 ```sh
 npm run build
@@ -27,25 +55,6 @@ npm run server
 ```
 
 The Node server serves `dist/`, exposes `/health`, and hosts the WebSocket endpoint. Active rooms are held in memory and disappear when the process stops.
-
-## DigitalOcean Deployment
-
-The `Deploy Bingo` workflow deploys pushes to `main` and can also be started manually. It expects the droplet to have:
-
-- Node.js and npm installed
-- The repository cloned at the path in the `DO_APP_DIR` Actions variable
-- A deploy user that can run `sudo systemctl restart <service>` without a password
-- A systemd service running `npm run server` from the application directory
-- GitHub as an allowed Git remote
-
-Use [deploy/bingo.service.example](deploy/bingo.service.example) as the starting point for `/etc/systemd/system/bingo.service`; update `User` and `WorkingDirectory` for the droplet, then run `sudo systemctl daemon-reload` and `sudo systemctl enable --now bingo`.
-
-Configure these production environment values in GitHub:
-
-- Secrets: `DO_HOST`, `DO_USER`, `DO_SSH_KEY`, `DO_KNOWN_HOSTS`
-- Variables: `DO_APP_DIR`, `DO_SYSTEMD_SERVICE`, optional `DO_APP_PORT` (defaults to `3001`)
-
-`DO_KNOWN_HOSTS` should contain the pinned output of `ssh-keyscan` for the droplet. The workflow checks out and deploys the exact commit that triggered it, installs from the public npm registry, builds, restarts systemd, and verifies `/health`.
 
 ## Checks
 

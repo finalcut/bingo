@@ -34,6 +34,15 @@ function ModePreview({ mode }: { mode: RoomStateEvent['mode'] }) {
   </div>
 }
 
+  function CalledBalls({ balls }: { balls: number[] }) {
+    return <div className="called-balls-grid" aria-label="Called balls">
+      {'BINGO'.split('').map((letter, column) => <div className="called-column" aria-label={`${letter} column`} key={letter}>
+        <strong>{letter}</strong>
+        {balls.filter((ball) => Math.floor((ball - 1) / 15) === column).sort((left, right) => left - right).map((ball) => <span key={ball}>{ball}</span>)}
+      </div>)}
+    </div>
+  }
+
 export function Room({ state, client, error }: { state: RoomStateEvent; client: GameClient; error: string }) {
   const [qr, setQr] = useState('')
   const [newGameMode, setNewGameMode] = useState<Bingo75ModeId>(state.mode.id)
@@ -44,26 +53,27 @@ export function Room({ state, client, error }: { state: RoomStateEvent; client: 
 
   return <main className="room-layout">
     <section className="game-panel">
-      <div className="eyebrow">Room {state.roomCode}</div>
-      <h1>{state.isHost ? 'Your game room' : 'Your bingo card'}</h1>
+      <h1>{state.roomName}</h1>
       <div className="status-row"><span className={`status-dot ${state.phase}`} />{state.phase === 'lobby' ? 'Waiting for the host' : state.phase === 'playing' ? 'Game in progress' : state.winnerId === state.playerId ? 'Bingo confirmed!' : 'Game complete'}</div>
       {winnerName && <p className="winner-banner" role="status">{winnerName} won the game</p>}
       <div className="mode-info"><div className="eyebrow">Game mode</div><h2>{state.mode.name}</h2><p>{state.mode.description}</p><ModePreview mode={state.mode} /></div>
+      <div className="called-panel"><div className="eyebrow">Called balls</div>{state.calledBalls.length ? <CalledBalls balls={state.calledBalls} /> : <small>No calls yet</small>}</div>
       {state.phase !== 'lobby' && <div className="ball-call"><span>Latest call</span><strong>{lastBall ? `${'BINGO'[Math.floor((lastBall - 1) / 15)]}${lastBall}` : 'Ready'}</strong></div>}
       {error && <p className="error" role="alert">{error}</p>}
       <Card card={state.card} called={state.calledBalls} eliminated={state.eliminated} onMark={(row, column) => client.send({ type: 'markCell', row, column })} />
       <button className="claim-button" disabled={state.eliminated || state.phase !== 'playing'} onClick={() => client.send({ type: 'claimBingo' })}>{state.eliminated ? 'Out of the game' : state.winnerId ? 'Game complete' : 'Bingo!'}</button>
     </section>
     <aside className="side-panel">
-      {state.isHost && <div className="host-controls">
-        <div className="eyebrow">Host controls</div>
-        {state.phase === 'lobby' && <button className="primary-button" onClick={() => client.send({ type: 'startGame' })}>Start game</button>}
-        {state.phase === 'playing' && <button className="primary-button" onClick={() => client.send({ type: 'drawBall' })}>Draw next ball</button>}
-        {state.phase === 'finished' && <><label>New game mode<select aria-label="New game mode" value={newGameMode} onChange={(event) => setNewGameMode(event.target.value as Bingo75ModeId)}>{Object.values(bingo75Modes).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select></label><button className="primary-button" onClick={() => client.send({ type: 'newGame', modeId: newGameMode })}>Start new game</button></>}
+      <div className="host-controls">
+        {state.isHost && <>
+          <div className="eyebrow">Host controls</div>
+          {state.phase === 'lobby' && <button className="primary-button" onClick={() => client.send({ type: 'startGame' })}>Start game</button>}
+          {state.phase === 'playing' && <button className="primary-button" onClick={() => client.send({ type: 'drawBall' })}>Draw next ball</button>}
+          {state.phase === 'finished' && <><label>New game mode<select aria-label="New game mode" value={newGameMode} onChange={(event) => setNewGameMode(event.target.value as Bingo75ModeId)}>{Object.values(bingo75Modes).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select></label><button className="primary-button" onClick={() => client.send({ type: 'newGame', modeId: newGameMode })}>Start new game</button></>}
+        </>}
         <div className="players"><span>Players</span><strong>{state.players.length}</strong>{state.players.map((player) => <div key={player.playerId}>{player.name}{player.eliminated ? ' (out)' : ''}</div>)}</div>
-        {qr && <img className="qr-code" src={qr} alt={`Join room ${state.roomCode}`} />}
-      </div>}
-      <div className="called-panel"><div className="eyebrow">Called balls</div><div className="called-balls">{state.calledBalls.length ? state.calledBalls.map((ball) => <span key={ball}>{ball}</span>) : <small>No calls yet</small>}</div></div>
+        {qr && <><img className="qr-code" src={qr} alt={`Join room ${state.roomCode}`} /><div className="room-code">{state.roomCode}</div></>}
+      </div>
     </aside>
   </main>
 }
@@ -72,6 +82,7 @@ export default function App() {
   const [mode, setMode] = useState<Mode>()
   const [gameMode, setGameMode] = useState<Bingo75ModeId>('standard')
   const [name, setName] = useState('')
+  const [roomName, setRoomName] = useState('')
   const [roomCode, setRoomCode] = useState(new URLSearchParams(window.location.search).get('room') ?? '')
   const [state, setState] = useState<RoomStateEvent>()
   const [error, setError] = useState('')
@@ -85,12 +96,12 @@ export default function App() {
     try {
       await client.connect()
       const token = roomCode ? localStorage.getItem(`bingo-token-${roomCode}`) ?? undefined : undefined
-      client.send(mode === 'host' ? { type: 'createRoom', name, modeId: gameMode } : { type: 'joinRoom', roomCode, name, token })
+      client.send(mode === 'host' ? { type: 'createRoom', name, roomName, modeId: gameMode } : { type: 'joinRoom', roomCode, name, token })
     } catch (connectionError) { setError(connectionError instanceof Error ? connectionError.message : 'Unable to connect') }
   }
 
   if (state) return <Room state={state} client={client} error={error} />
   if (!mode) return <main className="landing"><div className="eyebrow">75-ball bingo</div><h1>Make a little<br /><em>noise.</em></h1><p>One room. One caller. Every number matters.</p><div className="mode-actions"><button className="primary-button" onClick={() => setMode('host')}>Host a game</button><button className="secondary-button" onClick={() => setMode('player')}>Join a game</button></div></main>
 
-  return <main className="join-screen"><div className="eyebrow">{mode === 'host' ? 'New room' : 'Join room'}</div><h1>{mode === 'host' ? 'Set the room in motion.' : 'Find your seat.'}</h1><form onSubmit={enterRoom}><label>Display name<input autoFocus required value={name} onChange={(event) => setName(event.target.value)} /></label>{mode === 'host' && <label>Game mode<select aria-label="Game mode" value={gameMode} onChange={(event) => setGameMode(event.target.value as Bingo75ModeId)}>{Object.values(bingo75Modes).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select></label>}{mode === 'player' && <label>Room code<input required maxLength={6} value={roomCode} onChange={(event) => setRoomCode(event.target.value.toUpperCase())} /></label>}<button className="primary-button" type="submit">{mode === 'host' ? 'Create room' : 'Join room'}</button></form>{error && <p className="error">{error}</p>}<button className="back-button" onClick={() => setMode(undefined)}>Back</button></main>
+  return <main className="join-screen"><div className="eyebrow">{mode === 'host' ? 'New room' : 'Join room'}</div><h1>{mode === 'host' ? 'Set the room in motion.' : 'Find your seat.'}</h1><form className="join-form" onSubmit={enterRoom}><label>Players Name<input autoFocus required value={name} onChange={(event) => setName(event.target.value)} /></label>{mode === 'host' && <><label>Room Name<input required value={roomName} onChange={(event) => setRoomName(event.target.value)} /></label><label>Game Mode<select aria-label="Game mode" value={gameMode} onChange={(event) => setGameMode(event.target.value as Bingo75ModeId)}>{Object.values(bingo75Modes).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select></label></>}{mode === 'player' && <label>Room code<input required maxLength={6} value={roomCode} onChange={(event) => setRoomCode(event.target.value.toUpperCase())} /></label>}<button className="primary-button" type="submit">{mode === 'host' ? 'Create room' : 'Join room'}</button></form>{error && <p className="error">{error}</p>}<button className="back-button" onClick={() => setMode(undefined)}>Back</button></main>
 }

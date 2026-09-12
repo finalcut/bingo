@@ -24,6 +24,19 @@ describe('GameRoom', () => {
     expect(room.draw(room.hostId)).toBeGreaterThanOrEqual(1)
   })
 
+  it('lets a player join an active game with the called-ball history', () => {
+    const room = GameRoom.create('Host')
+    room.start(room.hostId)
+    const calledBalls = [room.draw(room.hostId), room.draw(room.hostId), room.draw(room.hostId)]
+
+    const latePlayer = room.join('Late player')
+
+    expect(room.phase).toBe('playing')
+    expect(room.calledBalls).toEqual(calledBalls)
+    expect(latePlayer.card.cells).toHaveLength(25)
+    expect(latePlayer.eliminated).toBe(false)
+  })
+
   it('accepts a Bingo claim only when a player has a called winning line', () => {
     const room = GameRoom.create('Host')
     const player = room.join('Player')
@@ -48,6 +61,17 @@ describe('GameRoom', () => {
     })
     expect(room.players.find((candidate) => candidate.playerId === player.playerId)?.eliminated).toBe(true)
     expect(() => room.mark(player.playerId, 0, 0)).toThrow('Player is out of the game')
+  })
+
+  it('lets a player unmark a cell by marking it again', () => {
+    const room = GameRoom.create('Host')
+    const player = room.join('Player')
+    room.start(room.hostId)
+
+    room.mark(player.playerId, 0, 0)
+    room.mark(player.playerId, 0, 0)
+
+    expect(player.card.cells[0].marked).toBe(false)
   })
 
   it('validates claims against the room mode', () => {

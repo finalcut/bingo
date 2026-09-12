@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createCard, createDrawBag, isWinningCard } from './bingo75'
+import { createCard, createDrawBag, isWinningCard, markCell } from './bingo75'
 
 describe('75-ball bingo rules', () => {
   it('creates a 5x5 card with column ranges and a free center', () => {
@@ -34,6 +34,16 @@ describe('75-ball bingo rules', () => {
     expect(new Set(bag)).toHaveProperty('size', 75)
     expect(bag).toContain(1)
     expect(bag).toContain(75)
+  })
+
+  it('toggles a selected cell when it is clicked again', () => {
+    const card = createCard(() => 0)
+
+    const markedCard = markCell(card, 0, 0)
+    const unmarkedCard = markCell(markedCard, 0, 0)
+
+    expect(markedCard.cells[0].marked).toBe(true)
+    expect(unmarkedCard.cells[0].marked).toBe(false)
   })
 
   it('recognizes rows, columns, and diagonals as winning patterns', () => {

@@ -21,6 +21,7 @@ function id(prefix: string): string {
 
 export class GameRoom {
   readonly hostId: string
+  readonly roomName: string
   private readonly playerMap = new Map<string, RoomPlayer>()
   private drawBag: number[]
   private readonly called = new Set<number>()
@@ -28,21 +29,22 @@ export class GameRoom {
   private winningPlayerId: string | undefined
   private selectedMode: Bingo75Mode
 
-  private constructor(host: RoomPlayer, mode: Bingo75Mode) {
+  private constructor(host: RoomPlayer, mode: Bingo75Mode, roomName: string) {
     this.hostId = host.playerId
+    this.roomName = roomName.trim()
     this.selectedMode = mode
     this.playerMap.set(host.playerId, host)
     this.drawBag = createDrawBag()
   }
 
-  static create(hostName: string, modeId: Bingo75ModeId = 'standard'): GameRoom {
+  static create(hostName: string, modeId: Bingo75ModeId = 'standard', roomName = 'Bingo room'): GameRoom {
     return new GameRoom({
       playerId: id('player'),
       name: hostName.trim(),
       token: id('token'),
       card: createCard(),
       eliminated: false,
-    }, getBingo75Mode(modeId))
+    }, getBingo75Mode(modeId), roomName)
   }
 
   get phase(): RoomPhase {
@@ -66,7 +68,7 @@ export class GameRoom {
   }
 
   join(name: string, token?: string): RoomPlayer {
-    if (this.currentPhase !== 'lobby') throw new Error('Game has already started')
+    if (this.currentPhase === 'finished') throw new Error('Game has already finished')
     const existing = token ? this.players.find((player) => player.token === token) : undefined
     if (existing) return existing
 
