@@ -111,6 +111,9 @@ describe('Bingo app entry', () => {
 
     const modeSelect = screen.getByLabelText(/new game mode/i)
     expect(modeSelect).toHaveValue('plus')
+    const newGameControls = modeSelect.closest('.new-game-controls')
+    expect(newGameControls).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /start new game/i }).closest('.new-game-controls')).toBe(newGameControls)
     fireEvent.change(modeSelect, { target: { value: 'blackout' } })
     fireEvent.click(screen.getByRole('button', { name: /start new game/i }))
 
@@ -154,6 +157,12 @@ describe('Bingo app entry', () => {
 
     const drawButton = screen.getByRole('button', { name: /draw next ball/i })
     expect(drawButton.closest('.game-panel')).toBeInTheDocument()
+    const gamePanel = drawButton.closest('.game-panel') as HTMLElement
+    const bingoCard = gamePanel.querySelector('.bingo-card')
+    const calledPanel = gamePanel.querySelector('.called-panel')
+    expect(bingoCard).toBeInTheDocument()
+    expect(calledPanel).toBeInTheDocument()
+    expect(bingoCard!.compareDocumentPosition(calledPanel!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     fireEvent.click(drawButton)
     expect(send).toHaveBeenCalledWith({ type: 'drawBall' })
   })

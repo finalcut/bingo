@@ -32,12 +32,13 @@ select { color-scheme: dark; }
 .mode-info { margin: 1.5rem 0; padding: 1rem 0; border-top: 1px solid rgb(242 199 181 / 35%); border-bottom: 1px solid rgb(242 199 181 / 35%); }
 .mode-info h2 { margin: .2rem 0; }
 .mode-info p { margin: 0 0 .6rem; color: #e7c7c0; }
-.mode-guide { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; width: min(130px, 100%); aspect-ratio: 1; }
+.mode-guide { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; width: min(130px, 100%); margin-inline: auto; aspect-ratio: 1; }
 .guide-cell { display: grid; place-items: center; min-width: 0; min-height: 0; overflow: hidden; color: #4a1822; background: #f8ece3; font-size: .38rem; font-weight: 700; line-height: 1; }
 .guide-cell-active { background: #f2c7b5; }
 .guide-cell-free { font-size: .3rem; }
-.ball-call { display: flex; align-items: baseline; gap: 1rem; margin: 2rem 0 1rem; color: #f0dcd4; font: .8rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-transform: uppercase; }
-.ball-call strong { color: #f2c7b5; font: 3rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.ball-call { display: flex; align-items: center; gap: 1rem; margin: 2rem 0 1rem; color: #f0dcd4; font: .8rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-transform: uppercase; }
+.ball-call strong { position: relative; display: grid; place-items: center; overflow: hidden; width: 5.5rem; aspect-ratio: 1; border: 2px solid #111; border-radius: 50%; color: #080808; background: radial-gradient(circle at 30% 22%, #fff 0, #f4f4f4 72%, #c9c9c9 100%); font: 700 1.35rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.ball-call strong::before { position: absolute; top: 13%; left: 17%; width: 2.2rem; height: 1.3rem; border-radius: 50%; background: #fff; content: ''; opacity: .72; transform: rotate(-28deg); }
 .bingo-card { display: grid; grid-template-columns: repeat(5, 1fr); gap: .35rem; max-width: 620px; margin: 1.5rem 0; }
 .card-heading { padding: .6rem; color: #f2c7b5; text-align: center; font: 700 1.1rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .card-cell { aspect-ratio: 1; border: 1px solid #c27a7e; color: #f7f1e5; background: #67252f; font-size: clamp(1rem, 3vw, 1.6rem); }
@@ -46,7 +47,12 @@ select { color-scheme: dark; }
 .claim-button { margin-top: .5rem; }
 .side-panel { display: grid; align-content: start; gap: 2rem; }
 .host-controls { display: grid; gap: 1rem; }
+.new-game-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .8rem; }
+.new-game-controls label { width: min(275px, 100%); }
+.new-game-controls select { width: 100%; }
+.new-game-controls .primary-button { align-self: end; }
 .players { display: grid; gap: .4rem; color: #f0dcd4; font: .85rem ui-sans-serif, system-ui, sans-serif; }
+.players ul { margin: 0; padding: 0; list-style-position: inside; text-align: left; }
 .players strong { color: #f2c7b5; font-size: 2rem; }
 .qr-code { justify-self: center; width: 180px; background: white; padding: .5rem; }
 .room-code { color: #f2c7b5; text-align: center; }
