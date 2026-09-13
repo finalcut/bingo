@@ -76,7 +76,7 @@ export class GameRoom {
 
   setMode(actorId: string, modeId: Bingo75ModeId): void {
     this.requireHost(actorId)
-    if (this.currentPhase !== 'lobby') throw new Error('Game has already started')
+    if (this.currentPhase === 'playing') throw new Error('Game has already started')
     this.selectedMode = getBingo75Mode(modeId)
   }
 

@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BingoCard } from '../domain/bingo75'
+import { bingo75Modes } from '../domain/bingo75Modes'
 import type { RoomStateEvent } from '../shared/protocol'
 import App, { Card, Room } from './App'
 import type { GameClient } from './gameClient'
@@ -103,7 +104,10 @@ describe('Bingo app entry', () => {
 
     render(<Room state={state} client={{ send: vi.fn() } as unknown as GameClient} error="" />)
 
-    expect(screen.getByRole('status')).toHaveTextContent('Alex won the game')
+    const winnerAnnouncement = screen.getByRole('status')
+    expect(winnerAnnouncement).toHaveTextContent('Alex won the game')
+    expect(winnerAnnouncement).toHaveClass('winner-overlay')
+    expect(winnerAnnouncement.closest('.game-panel')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Winner: Welsh dragon' })).toHaveAttribute('src', '/welsh-dragon.svg')
     expect(within(screen.getByLabelText('B column')).getAllByText(/^\d+$/).map((ball) => ball.textContent)).toEqual(['1', '2'])
     expect(within(screen.getByLabelText('I column')).getAllByText(/^\d+$/).map((ball) => ball.textContent)).toEqual(['16', '30'])
@@ -153,13 +157,16 @@ describe('Bingo app entry', () => {
     expect(hostControls).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^start!$/i }).closest('.host-controls')).toBe(hostControls)
     fireEvent.change(modeSelect, { target: { value: 'blackout' } })
+    expect(send).toHaveBeenCalledWith({ type: 'setMode', modeId: 'blackout' })
+    expect(screen.getByRole('heading', { name: 'Blackout' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /^start!$/i }))
 
     expect(send).toHaveBeenCalledWith({ type: 'newGame', modeId: 'blackout' })
 
-    rerender(<Room state={{ ...state, isHost: false, playerId: 'player-2' }} client={{ send } as unknown as GameClient} error="" />)
+    rerender(<Room state={{ ...state, isHost: false, playerId: 'player-2', mode: bingo75Modes.blackout }} client={{ send } as unknown as GameClient} error="" />)
 
     expect(screen.getByRole('heading', { name: /players \(2\)/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Blackout' })).toBeInTheDocument()
     expect(screen.getByText('ABC123', { selector: '.room-code' })).toBeInTheDocument()
     expect(screen.queryByText('Host controls')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('img', { name: 'Join room ABC123' })).toBeInTheDocument())

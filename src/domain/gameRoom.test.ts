@@ -39,7 +39,9 @@ describe('GameRoom', () => {
     expect(room.mode.id).toBe('blackout')
 
     room.start(room.hostId)
-    expect(() => room.setMode(room.hostId, 'plus')).toThrow('Game has already started')
+    room.claimBingo(player.playerId)
+    room.setMode(room.hostId, 'plus')
+    expect(room.mode.id).toBe('plus')
   })
 
   it('allows only the host to start and draw balls', () => {

@@ -29,7 +29,9 @@ select { color-scheme: dark; }
 .status-row { color: #f0dcd4; font: .85rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .status-dot { display: inline-block; width: .55rem; height: .55rem; margin-right: .5rem; background: #f2c7b5; border-radius: 50%; }
 .status-dot.complete { background: #f7f1e5; }
-.winner-banner { margin: 1.5rem 0 0; padding: 1rem; color: #4a1822; background: #f2c7b5; font-weight: 700; }
+.winner-banner { padding: 1rem; color: #4a1822; background: #f2c7b5; font-weight: 700; }
+.board-wrap { position: relative; }
+.winner-overlay { position: absolute; z-index: 2; top: 42%; left: 0; width: 100%; margin: 0; color: #f7f1e5; background: rgb(74 24 34 / 88%); border-block: 2px solid #f2c7b5; text-align: center; text-transform: uppercase; pointer-events: none; }
 .mode-info { margin: 1.5rem 0; padding: 1rem 0; border-top: 1px solid rgb(242 199 181 / 35%); border-bottom: 1px solid rgb(242 199 181 / 35%); }
 .mode-info h2 { margin: .2rem 0; }
 .mode-info p { margin: 0 0 .6rem; color: #e7c7c0; }
@@ -74,4 +76,4 @@ select { color-scheme: dark; }
 .called-column strong, .called-column span { display: grid; place-items: center; min-height: 1.8rem; color: #4a1822; background: #f0dcd4; font: .72rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .called-column strong { color: #f2c7b5; background: transparent; font-weight: 700; }
 .draw-action { margin-top: 1.25rem; }
-@media (max-width: 760px) { .room-layout { grid-template-columns: 1fr; padding: 2rem 1rem; } .side-panel { grid-row: 1; } .game-panel { grid-row: 2; } }
+@media (max-width: 1100px) { .room-layout { grid-template-columns: 1fr; padding: 2rem 1rem; } .side-panel { grid-row: 1; } .game-panel { grid-row: 2; } }
