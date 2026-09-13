@@ -67,6 +67,19 @@ export class GameRoom {
     return this.selectedMode
   }
 
+  rename(playerId: string, name: string): void {
+    const player = this.requirePlayer(playerId)
+    const trimmedName = name.trim()
+    if (!trimmedName) throw new Error('Display name cannot be blank')
+    player.name = trimmedName
+  }
+
+  setMode(actorId: string, modeId: Bingo75ModeId): void {
+    this.requireHost(actorId)
+    if (this.currentPhase !== 'lobby') throw new Error('Game has already started')
+    this.selectedMode = getBingo75Mode(modeId)
+  }
+
   join(name: string, token?: string): RoomPlayer {
     if (this.currentPhase === 'finished') throw new Error('Game has already finished')
     const existing = token ? this.players.find((player) => player.token === token) : undefined

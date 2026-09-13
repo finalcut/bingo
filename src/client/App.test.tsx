@@ -16,14 +16,51 @@ describe('Bingo app entry', () => {
     expect(screen.getByRole('button', { name: /host a game/i }).parentElement).toHaveClass('mode-actions')
   })
 
-  it('offers game mode selection when hosting', async () => {
+  it('opens the join room form when entered with a room code', () => {
+    window.history.replaceState(null, '', '/?room=ABC123')
+    const { unmount } = render(<App />)
+
+    expect(screen.getByRole('heading', { name: /get your card/i })).toBeInTheDocument()
+    expect(screen.getByLabelText(/room code/i)).toHaveValue('ABC123')
+    expect(screen.getByRole('button', { name: /join room/i })).toBeInTheDocument()
+
+    unmount()
+    window.history.replaceState(null, '', '/')
+  })
+
+  it('labels the join action as rejoin for a room with a saved token', () => {
+    window.history.replaceState(null, '', '/?room=ABC123')
+    localStorage.setItem('bingo-token-ABC123', 'saved-token')
+
+    const { unmount } = render(<App />)
+
+    expect(screen.getByRole('button', { name: /rejoin room/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^join room$/i })).not.toBeInTheDocument()
+
+    unmount()
+    localStorage.removeItem('bingo-token-ABC123')
+    window.history.replaceState(null, '', '/')
+  })
+
+  it('returns to the landing screen when the browser back button is used', async () => {
+    window.history.replaceState(null, '', '/')
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: /host a game/i }))
+    expect(screen.getByRole('heading', { name: /gather your friends/i })).toBeInTheDocument()
+
+    window.history.back()
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /host a game/i })).toBeInTheDocument())
+  })
+
+  it('does not ask for a game mode before creating a room', async () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: /host a game/i }))
 
     expect(screen.getByLabelText(/players name/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/room name/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/game mode/i)).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'Blackout' })).toBeInTheDocument()
+    expect(screen.queryByLabelText(/game mode/i)).not.toBeInTheDocument()
     expect(screen.getByLabelText(/players name/i).closest('form')).toHaveClass('join-form')
   })
 
@@ -53,10 +90,7 @@ describe('Bingo app entry', () => {
       isHost: false,
       eliminated: false,
       card,
-      players: [
-        { playerId: 'player-1', name: 'Alex', eliminated: false },
-        { playerId: 'player-2', name: 'Sam', eliminated: false },
-      ],
+      players: [{ playerId: 'player-1', name: 'Alex', eliminated: false }],
       calledBalls: [30, 2, 45, 1, 16],
       mode: {
         id: 'plus',
@@ -70,6 +104,7 @@ describe('Bingo app entry', () => {
     render(<Room state={state} client={{ send: vi.fn() } as unknown as GameClient} error="" />)
 
     expect(screen.getByRole('status')).toHaveTextContent('Alex won the game')
+    expect(screen.getByRole('img', { name: 'Winner: Welsh dragon' })).toHaveAttribute('src', '/welsh-dragon.svg')
     expect(within(screen.getByLabelText('B column')).getAllByText(/^\d+$/).map((ball) => ball.textContent)).toEqual(['1', '2'])
     expect(within(screen.getByLabelText('I column')).getAllByText(/^\d+$/).map((ball) => ball.textContent)).toEqual(['16', '30'])
     expect(within(screen.getByLabelText('N column')).getAllByText(/^\d+$/).map((ball) => ball.textContent)).toEqual(['45'])
@@ -91,7 +126,10 @@ describe('Bingo app entry', () => {
       isHost: true,
       eliminated: false,
       card,
-      players: [{ playerId: 'player-1', name: 'Alex', eliminated: false }],
+      players: [
+        { playerId: 'player-1', name: 'Alex', eliminated: false },
+        { playerId: 'player-2', name: 'Sam', eliminated: false },
+      ],
       calledBalls: [1, 2, 3],
       mode: {
         id: 'plus',
@@ -125,6 +163,88 @@ describe('Bingo app entry', () => {
     expect(screen.getByText('ABC123', { selector: '.room-code' })).toBeInTheDocument()
     expect(screen.queryByText('Host controls')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('img', { name: 'Join room ABC123' })).toBeInTheDocument())
+    expect(screen.getByLabelText('Room link')).toHaveValue('http://localhost:3000/?room=ABC123')
+  })
+
+  it('offers a display name form below the player list', () => {
+    const card: BingoCard = {
+      columns: ['B', 'I', 'N', 'G', 'O'],
+      cells: Array.from({ length: 25 }, (_, index) => ({ value: index + 1, marked: false, free: false })),
+    }
+    const send = vi.fn()
+    const state: RoomStateEvent = {
+      type: 'roomState',
+      roomCode: 'ABC123',
+      roomName: 'Friday Night Bingo',
+      phase: 'playing',
+      playerId: 'player-1',
+      token: 'token-1',
+      isHost: false,
+      eliminated: false,
+      card,
+      players: [
+        { playerId: 'player-1', name: 'Alex', eliminated: false },
+        { playerId: 'player-2', name: 'Sam', eliminated: false },
+      ],
+      calledBalls: [],
+      mode: {
+        id: 'plus',
+        name: 'Plus',
+        description: 'Complete the center row and center column.',
+        patterns: [[[0, 2], [1, 2], [2, 0], [2, 1], [2, 2], [2, 3], [2, 4], [3, 2], [4, 2]]],
+      },
+    }
+
+    render(<Room state={state} client={{ send } as unknown as GameClient} error="" />)
+
+    expect(screen.getByRole('heading', { name: 'Players (2)' })).toBeInTheDocument()
+    const playerList = screen.getByRole('heading', { name: /players/i }).nextElementSibling
+    expect(playerList).toHaveTextContent('Sam')
+    expect(playerList).not.toHaveTextContent('Alex')
+
+    const nameInput = screen.getByLabelText(/display name/i)
+    expect(nameInput).toHaveClass('display-name-input')
+    expect(nameInput.nextElementSibling).toHaveClass('secondary-button')
+    fireEvent.change(nameInput, { target: { value: 'New name' } })
+    fireEvent.click(screen.getByRole('button', { name: /change name/i }))
+
+    expect(nameInput.closest('.players')).toBeInTheDocument()
+    expect(send).toHaveBeenCalledWith({ type: 'rename', name: 'New name' })
+  })
+
+  it('lets the host choose a lobby mode and sends the change', () => {
+    const card: BingoCard = {
+      columns: ['B', 'I', 'N', 'G', 'O'],
+      cells: Array.from({ length: 25 }, (_, index) => ({ value: index + 1, marked: false, free: false })),
+    }
+    const send = vi.fn()
+    const state: RoomStateEvent = {
+      type: 'roomState',
+      roomCode: 'ABC123',
+      roomName: 'Friday Night Bingo',
+      phase: 'lobby',
+      playerId: 'player-1',
+      token: 'token-1',
+      isHost: true,
+      eliminated: false,
+      card,
+      players: [{ playerId: 'player-1', name: 'Alex', eliminated: false }],
+      calledBalls: [],
+      mode: {
+        id: 'standard',
+        name: 'Standard',
+        description: 'Complete any row, column, or diagonal.',
+        patterns: [[[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]]],
+      },
+    }
+
+    render(<Room state={state} client={{ send } as unknown as GameClient} error="" />)
+
+    const modeSelect = screen.getByLabelText(/game mode/i)
+    expect(modeSelect.closest('.host-controls')).toBeInTheDocument()
+    fireEvent.change(modeSelect, { target: { value: 'blackout' } })
+
+    expect(send).toHaveBeenCalledWith({ type: 'setMode', modeId: 'blackout' })
   })
 
   it('places the draw control in the game panel for the host', () => {

@@ -13,6 +13,35 @@ describe('GameRoom', () => {
     expect(reconnected.card).toEqual(joined.card)
   })
 
+  it('lets a player change their display name at any time', () => {
+    const room = GameRoom.create('Host')
+    const player = room.join('Player')
+
+    room.rename(player.playerId, '  New name  ')
+
+    expect(room.players.find((candidate) => candidate.playerId === player.playerId)?.name).toBe('New name')
+    expect(player.token).toBeDefined()
+  })
+
+  it('rejects blank display names', () => {
+    const room = GameRoom.create('Host')
+    const player = room.join('Player')
+
+    expect(() => room.rename(player.playerId, '   ')).toThrow('Display name cannot be blank')
+  })
+
+  it('lets only the host change the mode before the game starts', () => {
+    const room = GameRoom.create('Host')
+    const player = room.join('Player')
+
+    expect(() => room.setMode(player.playerId, 'blackout')).toThrow('Only the host')
+    room.setMode(room.hostId, 'blackout')
+    expect(room.mode.id).toBe('blackout')
+
+    room.start(room.hostId)
+    expect(() => room.setMode(room.hostId, 'plus')).toThrow('Game has already started')
+  })
+
   it('allows only the host to start and draw balls', () => {
     const room = GameRoom.create('Host')
     const player = room.join('Player')

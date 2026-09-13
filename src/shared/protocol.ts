@@ -3,12 +3,14 @@ import type { Bingo75Mode, Bingo75ModeId } from '../domain/bingo75Modes'
 import type { RoomPhase } from '../domain/gameRoom'
 
 export type ClientCommand =
-  | { type: 'createRoom'; name: string; roomName: string; modeId: Bingo75ModeId }
+  | { type: 'createRoom'; name: string; roomName: string; modeId?: Bingo75ModeId }
+  | { type: 'setMode'; modeId: Bingo75ModeId }
   | { type: 'joinRoom'; roomCode: string; name: string; token?: string }
   | { type: 'startGame' }
   | { type: 'drawBall' }
   | { type: 'markCell'; row: number; column: number }
   | { type: 'claimBingo' }
+  | { type: 'rename'; name: string }
   | { type: 'newGame'; modeId: Bingo75ModeId }
 
 export type RoomStateEvent = {

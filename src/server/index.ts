@@ -98,9 +98,11 @@ webSocketServer.on('connection', (socket) => {
       if (!found) throw new Error('Room not found')
 
       switch (command.type) {
+        case 'setMode': found.room.setMode(connection.playerId, command.modeId); break
         case 'startGame': found.room.start(connection.playerId); break
         case 'drawBall': found.room.draw(connection.playerId); break
         case 'markCell': found.room.mark(connection.playerId, command.row, command.column); break
+        case 'rename': found.room.rename(connection.playerId, command.name); break
         case 'newGame': found.room.newGame(connection.playerId, command.modeId); break
         case 'claimBingo': {
           const claim = found.room.claimBingo(connection.playerId)

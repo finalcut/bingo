@@ -18,7 +18,8 @@ p { color: #f0dcd4; font: 1.05rem/1.5 'Roboto Mono', ui-monospace, SFMono-Regula
 .join-form label { width: 100%; }
 .join-form .primary-button { justify-self: center; }
 label { display: grid; gap: .45rem; color: #f0dcd4; font: .78rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-transform: uppercase; letter-spacing: .08em; }
-input, select { padding: .8rem; color: #f7f1e5; background: #67252f; border: 1px solid #c27a7e; }
+input, select { width: 100%; padding: .8rem; color: #f7f1e5; background: #67252f; border: 1px solid #c27a7e; }
+select { height: 2.6rem; padding-block: .4rem; line-height: 1.2; }
 select { color-scheme: dark; }
 .back-button { margin-top: 1rem; padding-left: 0; background: none; color: #f0dcd4; }
 .error { display: inline-block; padding: .65rem .8rem; color: #8f3f36; background: #f7f1e5; }
@@ -53,8 +54,16 @@ select { color-scheme: dark; }
 .new-game-controls .primary-button { align-self: end; }
 .players { display: grid; gap: .4rem; color: #f0dcd4; font: .85rem ui-sans-serif, system-ui, sans-serif; }
 .players ul { margin: 0; padding: 0; list-style-position: inside; text-align: left; }
+.winner-dragon { width: 1.35rem; height: 1.35rem; margin-left: .4rem; vertical-align: middle; object-fit: contain; }
 .players strong { color: #f2c7b5; font-size: 2rem; }
+.name-form { display: grid; gap: .45rem; margin-top: .8rem; }
+.name-form label { color: #f0dcd4; font: .72rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-transform: uppercase; letter-spacing: .08em; }
+.name-form div { display: grid; gap: .45rem; }
+.name-form input { min-width: 0; width: 100%; padding: .6rem; }
+.name-form .secondary-button { width: 100%; padding: .6rem .7rem; white-space: nowrap; }
 .qr-code { justify-self: center; width: 180px; background: white; padding: .5rem; }
+.share-link { display: grid; gap: .35rem; color: #f0dcd4; font: .72rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-transform: uppercase; letter-spacing: .08em; }
+.share-link input { min-width: 0; width: 100%; padding: .6rem; color: #4a1822; background: #f0dcd4; font: .75rem ui-sans-serif, system-ui, sans-serif; letter-spacing: 0; }
 .room-code { color: #f2c7b5; text-align: center; }
 .room-code-distinct { font: 700 1.1rem/1 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; letter-spacing: .18em; }
 .called-panel { border-top: 1px solid #8b3f46; padding-top: 1rem; }
