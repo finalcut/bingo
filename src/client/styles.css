@@ -38,7 +38,9 @@ select { color-scheme: dark; }
 .guide-cell-active { background: #f2c7b5; }
 .guide-cell-free { font-size: .3rem; }
 .ball-call { display: flex; align-items: center; gap: 1rem; margin: 2rem 0 1rem; color: #f0dcd4; font: .8rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-transform: uppercase; }
-.ball-call strong { position: relative; display: grid; place-items: center; overflow: hidden; width: 5.5rem; aspect-ratio: 1; border: 2px solid #111; border-radius: 50%; color: #080808; background: radial-gradient(circle at 30% 22%, #fff 0, #f4f4f4 72%, #c9c9c9 100%); font: 700 1.35rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.ball-call strong { position: relative; display: flex; align-items: center; justify-content: center; gap: .15rem; overflow: hidden; width: 5.5rem; aspect-ratio: 1; border: 2px solid #111; border-radius: 50%; color: #080808; background: radial-gradient(circle at 30% 22%, #fff 0, #f4f4f4 72%, #c9c9c9 100%); font: 700 1.35rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.ball-letter { color: #ff1f1f; }
+.ball-number { color: #080808; }
 .ball-call strong::before { position: absolute; top: 13%; left: 17%; width: 2.2rem; height: 1.3rem; border-radius: 50%; background: #fff; content: ''; opacity: .72; transform: rotate(-28deg); }
 .bingo-card { display: grid; grid-template-columns: repeat(5, 1fr); gap: .35rem; max-width: 620px; margin: 1.5rem 0; }
 .card-heading { padding: .6rem; color: #f2c7b5; text-align: center; font: 700 1.1rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -51,7 +53,7 @@ select { color-scheme: dark; }
 .new-game-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .8rem; }
 .new-game-controls label { width: min(275px, 100%); }
 .new-game-controls select { width: 100%; }
-.new-game-controls .primary-button { align-self: end; }
+.new-game-controls .primary-button { align-self: end; width: 100%; }
 .players { display: grid; gap: .4rem; color: #f0dcd4; font: .85rem ui-sans-serif, system-ui, sans-serif; }
 .players ul { margin: 0; padding: 0; list-style-position: inside; text-align: left; }
 .winner-dragon { width: 1.35rem; height: 1.35rem; margin-left: .4rem; vertical-align: middle; object-fit: contain; }

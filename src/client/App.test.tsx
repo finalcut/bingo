@@ -142,24 +142,24 @@ describe('Bingo app entry', () => {
 
     const { rerender } = render(<Room state={state} client={{ send } as unknown as GameClient} error="" />)
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Friday Night Bingo')
+    expect(screen.getByRole('heading', { name: 'Friday Night Bingo' })).toBeInTheDocument()
     expect(screen.queryByText('Your game room')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getByText('ABC123', { selector: '.room-code' })).toBeInTheDocument())
     expect(screen.getByText('ABC123', { selector: '.room-code' })).toHaveClass('room-code-distinct')
 
-    const modeSelect = screen.getByLabelText(/new game mode/i)
+    const modeSelect = screen.getByLabelText(/game mode/i)
     expect(modeSelect).toHaveValue('plus')
-    const newGameControls = modeSelect.closest('.new-game-controls')
-    expect(newGameControls).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /start new game/i }).closest('.new-game-controls')).toBe(newGameControls)
+    const hostControls = modeSelect.closest('.host-controls')
+    expect(hostControls).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^start!$/i }).closest('.host-controls')).toBe(hostControls)
     fireEvent.change(modeSelect, { target: { value: 'blackout' } })
-    fireEvent.click(screen.getByRole('button', { name: /start new game/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^start!$/i }))
 
     expect(send).toHaveBeenCalledWith({ type: 'newGame', modeId: 'blackout' })
 
     rerender(<Room state={{ ...state, isHost: false, playerId: 'player-2' }} client={{ send } as unknown as GameClient} error="" />)
 
-    expect(screen.getByText('Players')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /players \(2\)/i })).toBeInTheDocument()
     expect(screen.getByText('ABC123', { selector: '.room-code' })).toBeInTheDocument()
     expect(screen.queryByText('Host controls')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('img', { name: 'Join room ABC123' })).toBeInTheDocument())
@@ -202,7 +202,7 @@ describe('Bingo app entry', () => {
     expect(playerList).toHaveTextContent('Sam')
     expect(playerList).not.toHaveTextContent('Alex')
 
-    const nameInput = screen.getByLabelText(/display name/i)
+    const nameInput = screen.getByLabelText(/current players name/i)
     expect(nameInput).toHaveClass('display-name-input')
     expect(nameInput.nextElementSibling).toHaveClass('secondary-button')
     fireEvent.change(nameInput, { target: { value: 'New name' } })
@@ -283,6 +283,8 @@ describe('Bingo app entry', () => {
     expect(bingoCard).toBeInTheDocument()
     expect(calledPanel).toBeInTheDocument()
     expect(bingoCard!.compareDocumentPosition(calledPanel!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(gamePanel.querySelector('.ball-letter')).toHaveTextContent('B')
+    expect(gamePanel.querySelector('.ball-number')).toHaveTextContent('3')
     fireEvent.click(drawButton)
     expect(send).toHaveBeenCalledWith({ type: 'drawBall' })
   })
