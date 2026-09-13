@@ -44,13 +44,11 @@ select { color-scheme: dark; }
 .ball-call strong { position: relative; display: flex; align-items: center; justify-content: center; gap: .15rem; overflow: hidden; width: 5.5rem; aspect-ratio: 1; border: 2px solid #111; border-radius: 50%; color: #080808; background: radial-gradient(circle at 30% 22%, #fff 0, #f4f4f4 72%, #c9c9c9 100%); font: 700 1.35rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .ball-letter { color: #ff1f1f; }
 .ball-number { color: #080808; }
-.ball-call strong::before { position: absolute; top: 13%; left: 17%; width: 2.2rem; height: 1.3rem; border-radius: 50%; background: #fff; content: ''; opacity: .72; transform: rotate(-28deg); }
 .recent-calls { display: flex; flex: 0 0 11.2rem; align-items: center; justify-content: flex-start; gap: .35rem; width: 11.2rem; margin: 0; padding: 0; list-style: none; }
 .recent-ball { position: relative; display: flex; align-items: center; justify-content: center; gap: .08rem; overflow: hidden; width: 3.1rem; aspect-ratio: 1; border: 1px solid #111; border-radius: 50%; color: #080808; background: radial-gradient(circle at 30% 22%, #fff 0, #f4f4f4 72%, #c9c9c9 100%); font: 700 .72rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
 .recent-ball-newest { width: 4rem; font-size: .9rem; }
 .recent-ball-middle { width: 3.5rem; font-size: .8rem; }
 .recent-ball-oldest { width: 3rem; font-size: .72rem; }
-.recent-ball::before { position: absolute; top: 13%; left: 17%; width: 1.4rem; height: .8rem; border-radius: 50%; background: #fff; content: ''; opacity: .72; transform: rotate(-28deg); }
 .recent-ball-letter { color: #ff1f1f; }
 .bingo-card { display: grid; grid-template-columns: repeat(5, 1fr); gap: .35rem; max-width: 620px; margin: 1.5rem 0; }
 .card-heading { padding: .6rem; color: #f2c7b5; text-align: center; font: 700 1.1rem 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
