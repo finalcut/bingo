@@ -6,6 +6,7 @@ import { WebSocketServer, type WebSocket } from 'ws'
 import type { ClientCommand, RoomStateEvent, ServerEvent } from '../shared/protocol'
 import { RoomRegistry } from './roomRegistry'
 
+const invalidRoomMessage = (roomCode: string): string => `The room code: ${roomCode} is no longer valid. Enter a new code or go to the home page.`
 const port = Number(process.env.PORT ?? 3001)
 const registry = new RoomRegistry()
 const connections = new Map<WebSocket, { code: string; playerId: string; token: string }>()
@@ -85,17 +86,23 @@ webSocketServer.on('connection', (socket) => {
 
       if (command.type === 'joinRoom') {
         const found = registry.get(command.roomCode)
-        if (!found) throw new Error('Room not found')
+        if (!found) throw new Error(invalidRoomMessage(command.roomCode))
         const player = found.room.join(command.name, command.token)
         connections.set(socket, { code: found.code, playerId: player.playerId, token: player.token })
         broadcast(found.code)
         return
       }
 
+      if (command.type === 'checkRoom') {
+        const found = registry.get(command.roomCode)
+        send(socket, found ? { type: 'roomCheck', valid: true } : { type: 'roomCheck', valid: false, message: invalidRoomMessage(command.roomCode) })
+        return
+      }
+
       const connection = connections.get(socket)
-      if (!connection) throw new Error('Join a room first')
+      if (!connection) throw new Error('This room is no longer available. Enter a new code or go to the home page.')
       const found = registry.get(connection.code)
-      if (!found) throw new Error('Room not found')
+      if (!found) throw new Error(invalidRoomMessage(connection.code))
 
       switch (command.type) {
         case 'setMode': found.room.setMode(connection.playerId, command.modeId); break

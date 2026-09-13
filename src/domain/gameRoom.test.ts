@@ -40,8 +40,8 @@ describe('GameRoom', () => {
 
     room.start(room.hostId)
     room.claimBingo(player.playerId)
-    room.setMode(room.hostId, 'plus')
-    expect(room.mode.id).toBe('plus')
+    expect(() => room.setMode(room.hostId, 'plus')).toThrow('Game has already started')
+    expect(room.mode.id).toBe('blackout')
   })
 
   it('allows only the host to start and draw balls', () => {
@@ -87,7 +87,7 @@ describe('GameRoom', () => {
     expect(room.claimBingo(player.playerId)).toEqual({ accepted: true, playerId: player.playerId })
   })
 
-  it('eliminates a player after an invalid Bingo claim', () => {
+  it('keeps a player in the game after an invalid Bingo claim', () => {
     const room = GameRoom.create('Host')
     const player = room.join('Player')
     room.join('Another player')
@@ -96,22 +96,11 @@ describe('GameRoom', () => {
     expect(() => room.mark(player.playerId, 0, 0)).not.toThrow()
     expect(room.claimBingo(player.playerId)).toEqual({
       accepted: false,
-      eliminated: true,
-      message: 'Bingo claim rejected. You are out of the game.',
+      message: 'You have not matched the required pattern with your selected numbers. Please re-check the target pattern.',
     })
-    expect(room.players.find((candidate) => candidate.playerId === player.playerId)?.eliminated).toBe(true)
-    expect(() => room.mark(player.playerId, 0, 0)).toThrow('Player is out of the game')
-  })
-
-  it('declares the last active player the winner after an invalid claim', () => {
-    const room = GameRoom.create('Host')
-    const player = room.join('Player')
-    room.start(room.hostId)
-
-    room.claimBingo(player.playerId)
-
-    expect(room.phase).toBe('finished')
-    expect(room.winnerId).toBe(room.hostId)
+    expect(room.phase).toBe('playing')
+    expect(room.players.find((candidate) => candidate.playerId === player.playerId)?.eliminated).toBe(false)
+    expect(() => room.mark(player.playerId, 0, 0)).not.toThrow()
   })
 
   it('lets a player unmark a cell by marking it again', () => {

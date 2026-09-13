@@ -12,6 +12,7 @@ export function getWebSocketUrl(location: WebSocketLocation, configuredUrl?: str
 
 export class GameClient {
   private socket: WebSocket | undefined
+  private connectionPromise: Promise<void> | undefined
   private readonly onEvent: (event: ServerEvent) => void
 
   constructor(onEvent: (event: ServerEvent) => void) {
@@ -19,13 +20,17 @@ export class GameClient {
   }
 
   connect(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    if (this.socket?.readyState === WebSocket.OPEN) return Promise.resolve()
+    if (this.connectionPromise) return this.connectionPromise
+
+    this.connectionPromise = new Promise((resolve, reject) => {
       const url = getWebSocketUrl(window.location, import.meta.env.VITE_WS_URL)
       this.socket = new WebSocket(url)
-      this.socket.onopen = () => resolve()
-      this.socket.onerror = () => reject(new Error('Unable to connect to the bingo server'))
+      this.socket.onopen = () => { this.connectionPromise = undefined; resolve() }
+      this.socket.onerror = () => { this.connectionPromise = undefined; reject(new Error('Unable to connect to the bingo server')) }
       this.socket.onmessage = (message) => this.onEvent(JSON.parse(message.data as string) as ServerEvent)
     })
+    return this.connectionPromise
   }
 
   send(command: ClientCommand): void {

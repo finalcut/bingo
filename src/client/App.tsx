@@ -44,13 +44,25 @@ function ModePreview({ mode }: { mode: RoomStateEvent['mode'] }) {
     </div>
   }
 
-export function Room({ state, client, error }: { state: RoomStateEvent; client: GameClient; error: string }) {
+function RecentCalls({ balls }: { balls: number[] }) {
+  const recentBalls = balls.slice(0, -1).slice(-3).reverse()
+  return <ol className="recent-calls" aria-label="Last three calls">{recentBalls.map((ball, index) => <li key={ball}><span className={`recent-ball recent-ball-${index === 0 ? 'newest' : index === 1 ? 'middle' : 'oldest'}`}><span className="recent-ball-letter">{'BINGO'[Math.floor((ball - 1) / 15)]}</span><span>{ball}</span></span></li>)}</ol>
+}
+
+export function Room({ state, client, error, errorSequence = 0 }: { state: RoomStateEvent; client: GameClient; error: string; errorSequence?: number }) {
   const [qr, setQr] = useState('')
+  const [visibleError, setVisibleError] = useState(error)
   const [newGameMode, setNewGameMode] = useState<Bingo75ModeId>(state.mode.id)
   const currentPlayer = state.players.find((player) => player.playerId === state.playerId)
   const [displayName, setDisplayName] = useState(currentPlayer?.name ?? '')
   const joinUrl = `${window.location.origin}/?room=${state.roomCode}`
   useEffect(() => { void QRCode.toDataURL(joinUrl, { width: 220, margin: 1 }).then(setQr) }, [joinUrl])
+  useEffect(() => {
+    setVisibleError(error)
+    if (!error) return
+    const timeout = window.setTimeout(() => setVisibleError(''), 5000)
+    return () => window.clearTimeout(timeout)
+  }, [error, errorSequence])
   const lastBall = state.calledBalls.at(-1)
   const winnerName = state.winnerId ? state.players.find((player) => player.playerId === state.winnerId)?.name : undefined
   const selectedModeId = state.phase === 'lobby' || !state.isHost ? state.mode.id : newGameMode
@@ -64,13 +76,14 @@ export function Room({ state, client, error }: { state: RoomStateEvent; client: 
     <section className="game-panel">
       <div className="status-row"><span className={`status-dot ${state.phase}`} />{state.phase === 'lobby' ? 'Waiting for the host' : state.phase === 'playing' ? 'Game in progress' : state.winnerId === state.playerId ? 'Bingo confirmed!' : 'Game complete'}</div>
       {state.isHost && state.phase === 'playing' && <div className="draw-action"><button className="primary-button" onClick={() => client.send({ type: 'drawBall' })}>Draw next ball</button></div>}
-      {state.phase !== 'lobby' && <div className="ball-call"><span>Latest call</span><strong>{lastBall ? <><span className="ball-letter">{'BINGO'[Math.floor((lastBall - 1) / 15)]}</span><span className="ball-number">{lastBall}</span></> : 'Ready'}</strong></div>}
-      {error && <p className="error" role="alert">{error}</p>}
+      {state.phase !== 'lobby' && <div className="ball-call-row"><div className="ball-call"><span>Latest call</span><strong>{lastBall ? <><span className="ball-letter">{'BINGO'[Math.floor((lastBall - 1) / 15)]}</span><span className="ball-number">{lastBall}</span></> : 'Ready'}</strong></div><RecentCalls balls={state.calledBalls} /></div>}
       <div className="board-wrap">
+        {visibleError && <div className="claim-warning-overlay" role="alert" onClick={() => setVisibleError('')}><p className="error">{visibleError}</p><ModePreview mode={state.mode} /></div>}
         {winnerName && <p className="winner-banner winner-overlay" role="status">{winnerName} won the game</p>}
         <Card card={state.card} called={state.calledBalls} eliminated={state.eliminated} onMark={(row, column) => client.send({ type: 'markCell', row, column })} />
       </div>
-      <button className="claim-button" disabled={state.eliminated || state.phase !== 'playing'} onClick={() => client.send({ type: 'claimBingo' })}>{state.eliminated ? 'Out of the game' : state.winnerId ? 'Game complete' : 'Bingo!'}</button>
+      <div className="target-pattern-title" aria-label="Target pattern">{state.mode.name}</div>
+      <button className="claim-button" disabled={Boolean(visibleError) || state.eliminated || state.phase !== 'playing'} onClick={() => client.send({ type: 'claimBingo' })}>{state.eliminated ? 'Out of the game' : state.winnerId ? 'Game complete' : 'Bingo!'}</button>
       <div className="called-panel"><div className="eyebrow">Called balls</div>{state.calledBalls.length ? <CalledBalls balls={state.calledBalls} /> : <small>No calls yet</small>}</div>
     </section>
     <aside className="side-panel">
@@ -99,10 +112,22 @@ export default function App() {
   const [roomCode, setRoomCode] = useState(initialRoomCode)
   const [state, setState] = useState<RoomStateEvent>()
   const [error, setError] = useState('')
+  const [errorSequence, setErrorSequence] = useState(0)
+  const [roomCheckPending, setRoomCheckPending] = useState(Boolean(initialRoomCode))
   const [client] = useState(() => new GameClient((event: ServerEvent) => {
-    if (event.type === 'error') setError(event.message)
+    if (event.type === 'roomCheck') {
+      setRoomCheckPending(false)
+      if (event.valid) setError('')
+      else {
+        setRoomCode('')
+        setError(event.message ?? `The room code: ${initialRoomCode} is no longer valid. Enter a new code or go to the home page.`)
+        setErrorSequence((sequence) => sequence + 1)
+      }
+    } else if (event.type === 'error') {
+      setError(event.message)
+      setErrorSequence((sequence) => sequence + 1)
+    }
     else {
-      setError('')
       setState(event)
       if ((window.history.state as AppHistoryState | null)?.view !== 'room') {
         window.history.pushState({ view: 'room' } satisfies AppHistoryState, '', `/?room=${event.roomCode}`)
@@ -110,6 +135,14 @@ export default function App() {
       localStorage.setItem(`bingo-token-${event.roomCode}`, event.token)
     }
   }))
+
+    useEffect(() => {
+      if (!initialRoomCode) return
+      void client.connect().then(() => client.send({ type: 'checkRoom', roomCode: initialRoomCode })).catch((connectionError) => {
+        setRoomCheckPending(false)
+        setError(connectionError instanceof Error ? connectionError.message : 'Unable to connect')
+      })
+    }, [client, initialRoomCode])
 
   useEffect(() => {
     const currentRoute = window.history.state as AppHistoryState | null
@@ -134,6 +167,14 @@ export default function App() {
     setMode(nextMode)
   }
 
+  function goHome() {
+    window.history.pushState({ view: 'landing' } satisfies AppHistoryState, '', '/')
+    setMode(undefined)
+    setState(undefined)
+    setError('')
+    setRoomCheckPending(false)
+  }
+
   async function enterRoom(event: React.FormEvent) {
     event.preventDefault()
     try {
@@ -143,10 +184,10 @@ export default function App() {
     } catch (connectionError) { setError(connectionError instanceof Error ? connectionError.message : 'Unable to connect') }
   }
 
-  if (state) return <Room state={state} client={client} error={error} />
+  if (state) return <Room state={state} client={client} error={error} errorSequence={errorSequence} />
   if (!mode) return <main className="landing"><div className="eyebrow">Bingo Bango Bongo</div><h1>Make a little<br /><em>noise</em></h1><p>LET'S PLAY SOME BINGO!</p><div className="mode-actions"><button className="primary-button" onClick={() => enterMode('host')}>Host a game</button><button className="secondary-button" onClick={() => enterMode('player')}>Join a game</button></div></main>
 
   const hasSavedToken = mode === 'player' && roomCode ? Boolean(localStorage.getItem(`bingo-token-${roomCode}`)) : false
 
-  return <main className="join-screen"><div className="eyebrow">{mode === 'host' ? 'New room' : 'Join room'}</div><h1>{mode === 'host' ? 'Gather Your Friends' : 'Get Your Card'}</h1><form className="join-form" onSubmit={enterRoom}><label>Players Name<input autoFocus required value={name} onChange={(event) => setName(event.target.value)} /></label>{mode === 'host' && <label>Room Name<input required value={roomName} onChange={(event) => setRoomName(event.target.value)} /></label>}{mode === 'player' && <label>Room code<input required maxLength={6} value={roomCode} onChange={(event) => setRoomCode(event.target.value.toUpperCase())} /></label>}<button className="primary-button" type="submit">{mode === 'host' ? 'Create room' : hasSavedToken ? 'Rejoin room' : 'Join room'}</button></form>{error && <p className="error">{error}</p>}<button className="back-button" onClick={() => window.history.back()}>Back</button></main>
+  return <main className="join-screen"><div className="eyebrow">{mode === 'host' ? 'New room' : 'Join room'}</div><h1>{mode === 'host' ? 'Gather Your Friends' : 'Get Your Card'}</h1>{error && <p className="error" role="alert">{error}</p>}<form className="join-form" onSubmit={enterRoom}><label>Players Name<input autoFocus required value={name} onChange={(event) => setName(event.target.value)} /></label>{mode === 'host' && <label>Room Name<input required value={roomName} onChange={(event) => setRoomName(event.target.value)} /></label>}{mode === 'player' && <label>Room code<input required maxLength={6} value={roomCode} onChange={(event) => { setRoomCode(event.target.value.toUpperCase()); setError('') }} /></label>}<button className="primary-button" disabled={roomCheckPending} type="submit">{mode === 'host' ? 'Create room' : hasSavedToken ? 'Rejoin room' : 'Join room'}</button></form><button className="back-button" onClick={goHome}>Home Page</button></main>
 }

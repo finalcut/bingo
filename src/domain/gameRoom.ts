@@ -13,7 +13,7 @@ export type RoomPlayer = {
 
 export type BingoClaim =
   | { accepted: true; playerId: string }
-  | { accepted: false; eliminated: true; message: string }
+  | { accepted: false; message: string }
 
 function id(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`
@@ -121,17 +121,11 @@ export class GameRoom {
   }
 
   claimBingo(playerId: string): BingoClaim {
-    if (this.currentPhase !== 'playing') return { accepted: false, eliminated: true, message: 'Game is not in progress.' }
+    if (this.currentPhase !== 'playing') return { accepted: false, message: 'Game is not in progress.' }
     const player = this.requirePlayer(playerId)
     this.requireActive(player)
     if (!isWinningSelection(player.card, this.called, this.selectedMode)) {
-      player.eliminated = true
-      const remainingPlayers = this.players.filter((candidate) => !candidate.eliminated)
-      if (remainingPlayers.length === 1) {
-        this.currentPhase = 'finished'
-        this.winningPlayerId = remainingPlayers[0].playerId
-      }
-      return { accepted: false, eliminated: true, message: 'Bingo claim rejected. You are out of the game.' }
+      return { accepted: false, message: 'You have not matched the required pattern with your selected numbers. Please re-check the target pattern.' }
     }
     this.currentPhase = 'finished'
     this.winningPlayerId = playerId

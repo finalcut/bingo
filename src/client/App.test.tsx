@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BingoCard } from '../domain/bingo75'
 import { bingo75Modes } from '../domain/bingo75Modes'
@@ -6,7 +6,32 @@ import type { RoomStateEvent } from '../shared/protocol'
 import App, { Card, Room } from './App'
 import type { GameClient } from './gameClient'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+  vi.unstubAllGlobals()
+})
+
+function stubRoomCheck(valid: boolean): void {
+  class MockWebSocket {
+    static readonly OPEN = 1
+    readonly readyState = MockWebSocket.OPEN
+    onopen?: () => void
+    onerror?: () => void
+    onmessage?: (event: { data: string }) => void
+
+    constructor() {
+      queueMicrotask(() => this.onopen?.())
+    }
+
+    send(rawCommand: string): void {
+      const command = JSON.parse(rawCommand) as { type: string; roomCode?: string }
+      if (command.type === 'checkRoom') queueMicrotask(() => this.onmessage?.({ data: JSON.stringify(valid ? { type: 'roomCheck', valid: true } : { type: 'roomCheck', valid: false, message: `The room code: ${command.roomCode} is no longer valid. Enter a new code or go to the home page.` }) }))
+    }
+  }
+
+  vi.stubGlobal('WebSocket', MockWebSocket)
+}
 
 describe('Bingo app entry', () => {
   it('offers host and player modes', () => {
@@ -18,18 +43,21 @@ describe('Bingo app entry', () => {
   })
 
   it('opens the join room form when entered with a room code', () => {
+    stubRoomCheck(true)
     window.history.replaceState(null, '', '/?room=ABC123')
     const { unmount } = render(<App />)
 
     expect(screen.getByRole('heading', { name: /get your card/i })).toBeInTheDocument()
     expect(screen.getByLabelText(/room code/i)).toHaveValue('ABC123')
     expect(screen.getByRole('button', { name: /join room/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /home page/i })).toBeInTheDocument()
 
     unmount()
     window.history.replaceState(null, '', '/')
   })
 
   it('labels the join action as rejoin for a room with a saved token', () => {
+    stubRoomCheck(true)
     window.history.replaceState(null, '', '/?room=ABC123')
     localStorage.setItem('bingo-token-ABC123', 'saved-token')
 
@@ -43,6 +71,23 @@ describe('Bingo app entry', () => {
     window.history.replaceState(null, '', '/')
   })
 
+  it('warns before joining when a URL room code is no longer valid', async () => {
+    stubRoomCheck(false)
+    window.history.replaceState(null, '', '/?room=EXPIRED')
+
+    render(<App />)
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('The room code: EXPIRED is no longer valid. Enter a new code or go to the home page.'))
+    expect(screen.getByLabelText(/room code/i)).toHaveValue('')
+    expect(screen.getByRole('button', { name: /^join room$/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /rejoin room/i })).not.toBeInTheDocument()
+    const alert = screen.getByRole('alert')
+    const playerNameLabel = screen.getByLabelText(/players name/i).closest('label')
+    expect(alert.compareDocumentPosition(playerNameLabel!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+
+    window.history.replaceState(null, '', '/')
+  })
+
   it('returns to the landing screen when the browser back button is used', async () => {
     window.history.replaceState(null, '', '/')
     render(<App />)
@@ -53,6 +98,19 @@ describe('Bingo app entry', () => {
     window.history.back()
 
     await waitFor(() => expect(screen.getByRole('button', { name: /host a game/i })).toBeInTheDocument())
+  })
+
+  it('returns to the actual home page from the join form', () => {
+    stubRoomCheck(true)
+    window.history.replaceState(null, '', '/?room=EXPIRED')
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: /home page/i }))
+
+    expect(screen.getByRole('button', { name: /host a game/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /join a game/i })).toBeInTheDocument()
+    expect(window.location.pathname).toBe('/')
+    expect(window.location.search).toBe('')
   })
 
   it('does not ask for a game mode before creating a room', async () => {
@@ -109,9 +167,89 @@ describe('Bingo app entry', () => {
     expect(winnerAnnouncement).toHaveClass('winner-overlay')
     expect(winnerAnnouncement.closest('.game-panel')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Winner: Welsh dragon' })).toHaveAttribute('src', '/welsh-dragon.svg')
+    const recentBalls = within(screen.getByLabelText('Last three calls')).getAllByRole('listitem')
+    expect(recentBalls.map((ball) => ball.textContent)).toEqual(['B1', 'N45', 'B2'])
+    expect(recentBalls[0].firstElementChild).toHaveClass('recent-ball-newest')
+    expect(recentBalls[1].firstElementChild).toHaveClass('recent-ball-middle')
+    expect(recentBalls[2].firstElementChild).toHaveClass('recent-ball-oldest')
     expect(within(screen.getByLabelText('B column')).getAllByText(/^\d+$/).map((ball) => ball.textContent)).toEqual(['1', '2'])
     expect(within(screen.getByLabelText('I column')).getAllByText(/^\d+$/).map((ball) => ball.textContent)).toEqual(['16', '30'])
     expect(within(screen.getByLabelText('N column')).getAllByText(/^\d+$/).map((ball) => ball.textContent)).toEqual(['45'])
+  })
+
+  it('hides an invalid claim message after five seconds', () => {
+    vi.useFakeTimers()
+    const card: BingoCard = {
+      columns: ['B', 'I', 'N', 'G', 'O'],
+      cells: Array.from({ length: 25 }, (_, index) => ({ value: index + 1, marked: false, free: false })),
+    }
+    const state: RoomStateEvent = {
+      type: 'roomState',
+      roomCode: 'ABC123',
+      roomName: 'Friday Night Bingo',
+      phase: 'playing',
+      playerId: 'player-1',
+      token: 'token-1',
+      isHost: false,
+      eliminated: false,
+      card,
+      players: [{ playerId: 'player-1', name: 'Alex', eliminated: false }],
+      calledBalls: [],
+      mode: bingo75Modes.standard,
+    }
+
+    const { rerender } = render(<Room state={state} client={{ send: vi.fn() } as unknown as GameClient} error="You have not matched the required pattern with your selected numbers. Please re-check the target pattern." />)
+
+    const warning = screen.getByRole('alert')
+    expect(warning).toHaveTextContent('re-check the target pattern')
+    expect(warning.closest('.board-wrap')).toBeInTheDocument()
+    expect(within(warning).getByLabelText('Standard winning pattern')).toBeInTheDocument()
+    expect(screen.getByText('Standard', { selector: '.target-pattern-title' })).toBeInTheDocument()
+    const claimButton = screen.getByRole('button', { name: 'Bingo!' })
+    expect(claimButton).toBeDisabled()
+    fireEvent.click(warning)
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(claimButton).toBeEnabled()
+
+    rerender(<Room state={state} client={{ send: vi.fn() } as unknown as GameClient} error="You have not matched the required pattern with your selected numbers. Please re-check the target pattern." errorSequence={1} />)
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(4999))
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(1))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(claimButton).toBeEnabled()
+    rerender(<Room state={{ ...state, mode: bingo75Modes['letter-u'] }} client={{ send: vi.fn() } as unknown as GameClient} error="" />)
+    expect(screen.getByText('Letter U', { selector: '.target-pattern-title' })).toBeInTheDocument()
+  })
+
+  it('allows the same invalid claim warning to be shown again', () => {
+    vi.useFakeTimers()
+    const card: BingoCard = {
+      columns: ['B', 'I', 'N', 'G', 'O'],
+      cells: Array.from({ length: 25 }, (_, index) => ({ value: index + 1, marked: false, free: false })),
+    }
+    const state: RoomStateEvent = {
+      type: 'roomState',
+      roomCode: 'ABC123',
+      roomName: 'Friday Night Bingo',
+      phase: 'playing',
+      playerId: 'player-1',
+      token: 'token-1',
+      isHost: false,
+      eliminated: false,
+      card,
+      players: [{ playerId: 'player-1', name: 'Alex', eliminated: false }],
+      calledBalls: [],
+      mode: bingo75Modes.standard,
+    }
+    const warningMessage = 'You have not matched the required pattern with your selected numbers. Please re-check the target pattern.'
+    const { rerender } = render(<Room state={state} client={{ send: vi.fn() } as unknown as GameClient} error={warningMessage} errorSequence={0} />)
+
+    act(() => vi.advanceTimersByTime(5000))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    rerender(<Room state={state} client={{ send: vi.fn() } as unknown as GameClient} error={warningMessage} errorSequence={1} />)
+    expect(screen.getByRole('alert')).toHaveTextContent('re-check the target pattern')
   })
 
   it('shows the room name and code for the host', async () => {
